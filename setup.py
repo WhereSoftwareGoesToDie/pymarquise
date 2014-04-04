@@ -4,6 +4,14 @@ from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
+extensions = [
+    Extension(
+        "marquise", 
+        ["marquise/marquise.pyx"],
+        include_dirs=["marquise"],
+    ),
+]
+
 setup(
     name="marquise",
     version="1.2.2",
@@ -17,4 +25,8 @@ setup(
     requires=[
         "pyzmq",
     ],
+    cmdclass = {
+        "build_ext" : build_ext,
+    },
+    ext_modules = extensions
 )

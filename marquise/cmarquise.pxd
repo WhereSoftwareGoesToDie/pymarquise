@@ -1,3 +1,5 @@
+from libc.stdint cimport uint64_t, int64_t, uint8_t
+
 cdef extern from "marquise.h":
 	ctypedef void* marquise_consumer
 	ctypedef void* marquise_connection
