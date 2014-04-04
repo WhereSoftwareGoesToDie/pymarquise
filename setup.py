@@ -6,8 +6,8 @@ from Cython.Distutils import build_ext
 
 extensions = [
     Extension(
-        "marquise", 
-        ["marquise/marquise.pyx"],
+        "_marquise", 
+        ["marquise/_marquise.pyx"],
         include_dirs=["marquise"],
     ),
 ]
