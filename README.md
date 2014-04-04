@@ -1,4 +1,8 @@
 pymarquise
 ==========
 
-Python bindings for libmarquise
+Python bindings for libmarquise. 
+
+## requirements
+
+ - Python 3+
