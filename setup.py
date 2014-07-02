@@ -1,17 +1,11 @@
-#! /usr/bin/env python
-
 from distutils.core import setup
-from distutils.extension import Extension
-from Cython.Build import cythonize
 
-extensions = [
-    Extension(
-        "_marquise", 
-        ["marquise/_marquise.pyx"],
-        include_dirs=["marquise"],
-        libraries=["marquise"],
-    ),
-]
+import marquise
+print(marquise.ffi.verifier.get_extension())
+
+
+# How to package??
+# https://bitbucket.org/cffi/cffi/issue/109/enable-sane-packaging-for-cffi
 
 setup(
     name="marquise",
@@ -26,5 +20,5 @@ setup(
     requires=[
         "pyzmq",
     ],
-    ext_modules = cythonize(extensions),
+    ext_modules = [marquise.ffi.verifier.get_extension()],
 )
