@@ -82,6 +82,11 @@ class Marquise(object):
 		if self.debug_enabled:
 			print("DEBUG: {}".format(msg))
 
+	def close(self):
+		self.debug("Shutting down Marquise handle spooling to {}".format(self.spool_path))
+		c_libmarquise.marquise_shutdown(self.marquise_ctx)
+		# return None, shutdown always succeeds
+
 	@staticmethod
 	def hash_identifier(identifier):
 		"""Performs siphash-2-4 on the input with a fixed all-zeroes key, returnval is an integer"""
@@ -137,3 +142,12 @@ m.send_simple(5, 100, 200000)
 m.send_simple(5, 101, 200001)
 m.send_simple(5, 102, 200002)
 m.send_simple(5, 103, 200003)
+
+
+# Jay mentioned something about calling your cleanup functions at the right
+# time. It's good practice to call close() manually, but as a last-ditch
+# measure you can attach close() to the object's deallocation hooks, with the
+# caveat that this is *not* guaranteed to be actually run in a timely manner
+# when del(yourObject) occurs.
+m.close()
+del(m)
