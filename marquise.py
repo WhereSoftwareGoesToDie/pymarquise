@@ -54,9 +54,15 @@ c_libmarquise = ffi.verify("""#include "marquise.h" """, include_dirs=[marquise_
 
 class Marquise(object):
 	#typedef struct {
-	#        char *spool_path;
-	#        FILE *spool;
+	#	char *spool_path;
+	#	FILE *spool;
 	#} marquise_ctx;
+
+	#typedef struct {
+	#	char **fields;
+	#	char **values;
+	#	size_t n_tags;
+	#} marquise_source;
 
 	def __init__(self, namespace, debug=False):
 		self.debug_enabled = debug
