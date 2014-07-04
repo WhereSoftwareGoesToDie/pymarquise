@@ -124,6 +124,20 @@ class Marquise(object):
 		pass
 		# will need to call ffi.new and stuff around here to make up the C datatypes and dispatch them.
 
+	def new_source(self, FOO):
+		# Not yet implemented, may be a different sort of class
+		#marquise_source *marquise_new_source(char **fields, char **values, size_t n_tags);
+		pass
+
+	def update_source(self, FOO):
+		# Not yet implemented, may be a different sort of class
+		#int marquise_update_source(marquise_ctx *ctx, uint64_t address, marquise_source *source);
+		pass
+
+	def free_source(self, FOO):
+		# Not yet implemented, may be a different sort of class
+		#void marquise_free_source(marquise_source *source);
+		pass
 
 
 # Test calling the hash function
