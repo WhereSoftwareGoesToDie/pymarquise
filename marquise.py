@@ -58,7 +58,8 @@ class Marquise(object):
 	#        FILE *spool;
 	#} marquise_ctx;
 
-	def __init__(self, namespace):
+	def __init__(self, namespace, debug=False):
+		self.debug_enabled = debug
 		self.namespace_c = cstring(namespace)
 		self.marquise_ctx = c_libmarquise.marquise_init(self.namespace_c)
 		if is_cnull(self.marquise_ctx):
@@ -70,6 +71,10 @@ class Marquise(object):
 
 	def __str__(self):
 		return "<Marquise handle spooling to {}>".format(self.spool_path)
+
+	def debug(self, msg):
+		if self.debug_enabled:
+			print("DEBUG: {}".format(msg))
 
 	@staticmethod
 	def hash_identifier(identifier):
@@ -92,7 +97,7 @@ class Marquise(object):
 		c_value =     ffi.cast("int", value)
 
 		retval = c_libmarquise.marquise_send_simple(self.marquise_ctx, c_address, c_timestamp, c_value)
-		print("DEBUG: send_simple retval is {}".format(retval))
+		self.debug("send_simple retval is {}".format(retval))
 		# XXX: gotta free anything here?
 		if retval == 0:
 			return True
