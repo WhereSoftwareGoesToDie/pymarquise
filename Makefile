@@ -1,3 +1,5 @@
+# Need to specify the MARQUISE_SPOOL_DIR while I'm testing, I think.
+
 run:
 	MARQUISE_SPOOL_DIR=/tmp python -B marquise.py
 

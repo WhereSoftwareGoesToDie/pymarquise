@@ -71,7 +71,14 @@ class Marquise(object):
 	def __str__(self):
 		return "<Marquise handle spooling to {}>".format(self.spool_path)
 
-	def send_simple(self, datapoint):
+	@staticmethod
+	def hash_identifier(identifier):
+		"""Performs siphash-2-4 on the input with a fixed all-zeroes key, returnval is an integer"""
+		return c_libmarquise.marquise_hash_identifier(cstring(identifier), len(identifier) )
+		# XXX: do I need to free anything here, or will stuff drop out
+		# of scope cleanly and get cleaned up?
+
+	def send_simple(self, address, timestamp, value):
 		"""
 		Queue a simple datapoint (i.e., a 64-bit word) to be sent by 
 		the Marquise daemon. Returns zero on success and nonzero on 
@@ -80,10 +87,13 @@ class Marquise(object):
 		int marquise_send_simple(marquise_ctx *ctx, uint64_t address, uint64_t timestamp, uint64_t value);
 		"""
 		# will need to call ffi.new and stuff around here to make up the C datatypes and dispatch them.
-		address = 123456
-		timestamp = 18
-		retval = c_libmarquise.marquise_send_simple(self.marquise_ctx, address, timestamp, datapoint)
-		print(retval)
+		c_address =   ffi.cast("int", address)
+		c_timestamp = ffi.cast("int", timestamp)
+		c_value =     ffi.cast("int", value)
+
+		retval = c_libmarquise.marquise_send_simple(self.marquise_ctx, c_address, c_timestamp, c_value)
+		print("DEBUG: send_simple retval is {}".format(retval))
+		# XXX: gotta free anything here?
 		if retval == 0:
 			return True
 		return False
@@ -107,16 +117,16 @@ class Marquise(object):
 # print( cprint(ctx.spool_path) )
 
 
-# XXX: Not sure this is going to work, I need some test vectors to make sure
-# I'm seeing output that is at all sane.
-#
-# uint64_t marquise_hash_identifier(const unsigned char *id, size_t id_len);
-#for identifier in [ "foo", "" ]:
-#	identifier_len = len(identifier)
-#	hid = c_libmarquise.marquise_hash_identifier(cstring(identifier), identifier_len)
-#	print(hid)
+# Test calling the hash function
+test_identifier = "hostname:fe1.example.com,metric:BytesUsed,service:memory,"
+# Should print 7602883380529707052
+print(Marquise.hash_identifier(test_identifier) )
 
 
+# Test initialisation
 m = Marquise("mynamespace")
-#print(m)
-m.send_simple(42)
+print(m)
+
+
+# Test send_simple()
+m.send_simple(5, 100, 200000)
