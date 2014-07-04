@@ -134,3 +134,6 @@ print(m)
 
 # Test send_simple()
 m.send_simple(5, 100, 200000)
+m.send_simple(5, 101, 200001)
+m.send_simple(5, 102, 200002)
+m.send_simple(5, 103, 200003)
