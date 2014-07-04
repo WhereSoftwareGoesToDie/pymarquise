@@ -115,13 +115,6 @@ class Marquise(object):
 
 
 
-# print("---- Hack a marquise_ctx* out of thin air")
-# ctx = ffi.new("marquise_ctx*")
-# ctx.spool_path = cstring("/vur/lob/foo")
-# print("The spool path is:")
-# print( cprint(ctx.spool_path) )
-
-
 # Test calling the hash function
 test_identifier = "hostname:fe1.example.com,metric:BytesUsed,service:memory,"
 # Should print 7602883380529707052
@@ -129,7 +122,7 @@ print(Marquise.hash_identifier(test_identifier) )
 
 
 # Test initialisation
-m = Marquise("mynamespace")
+m = Marquise("mynamespace", debug=True)
 print(m)
 
 
