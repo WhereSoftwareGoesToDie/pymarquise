@@ -1,4 +1,5 @@
 import os
+import time
 from cffi import FFI
 
 ffi = FFI()
@@ -94,25 +95,52 @@ class Marquise(object):
 		# XXX: do I need to free anything here, or will stuff drop out
 		# of scope cleanly and get cleaned up?
 
-	def send_simple(self, address, timestamp, value):
-		"""
-		Queue a simple datapoint (i.e., a 64-bit word) to be sent by 
-		the Marquise daemon. Returns zero on success and nonzero on 
-		failure.
+	@staticmethod
+	def current_timestamp():
+		return int(time.time() * 1000000000)
 
-		int marquise_send_simple(marquise_ctx *ctx, uint64_t address, uint64_t timestamp, uint64_t value);
+	def send_simple(self, address=None, source=None, timestamp=None, value=None):
 		"""
-		# will need to call ffi.new and stuff around here to make up the C datatypes and dispatch them.
-		c_address =   ffi.cast("int", address)
-		c_timestamp = ffi.cast("int", timestamp)
-		c_value =     ffi.cast("int", value)
+		Queue a simple datapoint (i.e., a 64-bit word), returns
+		True/False for success.
+		"""
+
+		if value is None:
+			# This is dirty, but I don't feel like putting `value`
+			# at the start of the arguments list.
+			raise TypeError("You must supply a `value`.")
+		if address is None and source is None:
+			raise TypeError("You must supply either `address` or `source`.")
+		if address and source:
+			raise TypeError("You must supply `address` or `source`, not both.")
+
+		if source:
+			self.debug("Supplied source: {}".format(source))
+		if address:
+			self.debug("Supplied address: {}".format(address))
+
+		if source:
+			address = self.hash_identifier(source)
+			self.debug("The address will be {}".format(address))
+
+		# timestamp is nanoseconds since epoch
+		if timestamp is None:
+			timestamp = self.current_timestamp()
+
+		# Will need to call ffi.new and stuff around here to make up the C datatypes and dispatch them.
+		# FFI will take care of converting them to the right endianness. I think.
+		c_address =   ffi.cast("uint64_t", address)
+		c_timestamp = ffi.cast("uint64_t", timestamp)
+		c_value =     ffi.cast("uint64_t", value)
 
 		retval = c_libmarquise.marquise_send_simple(self.marquise_ctx, c_address, c_timestamp, c_value)
 		self.debug("send_simple retval is {}".format(retval))
-		# XXX: gotta free anything here?
-		if retval == 0:
-			return True
-		return False
+
+		# XXX: Gotta free anything here? c_address/c_timestamp/c_value
+		# will fall out of scope in a sec anyway.
+
+		return True if retval == 0 else False
+
 
 	def send_extended(self, datapoint):
 		"""
