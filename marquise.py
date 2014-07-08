@@ -159,6 +159,13 @@ class Marquise(object):
 		pass
 		# will need to call ffi.new and stuff around here to make up the C datatypes and dispatch them.
 
+
+	# These functions are about building and submitting a dictionary of
+	# key-value pairs of metadata regarding a metric. At a C level it's
+	# about building (malloc'ing), sending, and free'ing a data structure.
+	# We don't really have to care about that, so the Python interface
+	# should just be "submit a dict of metadata for a metric".
+
 	def new_source(self, FOO):
 		# Not yet implemented, may be a different sort of class
 		#marquise_source *marquise_new_source(char **fields, char **values, size_t n_tags);
@@ -204,4 +211,3 @@ m.send_simple_source("hostname:misaka.anchor.net.au,metric:BytesTx,service:netwo
 # caveat that this is *not* guaranteed to be actually run in a timely manner
 # when del(yourObject) occurs.
 m.close()
-del(m)
