@@ -141,6 +141,13 @@ class Marquise(object):
 
 		return True if retval == 0 else False
 
+	# Simple wrappers to skip specifying address/source all the time
+	def send_simple_source(self, source, timestamp, value):
+		return self.send_simple(source=source, timestamp=timestamp, value=value)
+
+	def send_simple_address(self, address, timestamp, value):
+		return self.send_simple(address=address, timestamp=timestamp, value=value)
+
 
 	def send_extended(self, datapoint):
 		"""
@@ -180,10 +187,15 @@ print(m)
 
 
 # Test send_simple()
-m.send_simple(5, 100, 200000)
-m.send_simple(5, 101, 200001)
-m.send_simple(5, 102, 200002)
-m.send_simple(5, 103, 200003)
+m.send_simple_address(5, 100, 200000)
+m.send_simple_address(5, 101, 200001)
+m.send_simple_address(5, 102, 200002)
+m.send_simple_address(5, 103, 200003)
+
+m.send_simple_source(test_identifier, None, 42)
+m.send_simple_source("hostname:misaka.anchor.net.au,metric:BytesTx,service:network,", None, 42)
+m.send_simple_source("hostname:misaka.anchor.net.au,metric:BytesTx,service:network,", None, 100)
+m.send_simple_source("hostname:misaka.anchor.net.au,metric:BytesTx,service:network,", None, 9000)
 
 
 # Jay mentioned something about calling your cleanup functions at the right
