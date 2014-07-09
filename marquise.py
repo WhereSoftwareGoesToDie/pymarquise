@@ -226,6 +226,8 @@ class Marquise(object):
 
 # Test calling the hash function
 test_identifier = "hostname:fe1.example.com,metric:BytesUsed,service:memory,"
+sample_address = 5753895591108871589
+
 print("This should print 7602883380529707052:")
 print(Marquise.hash_identifier(test_identifier) )
 
@@ -251,6 +253,9 @@ m.send_extended(source="hostname:misaka.anchor.net.au", timestamp=None, value="l
 m.send_extended(source="hostname:misaka.anchor.net.au", timestamp=None, value="dolor")
 m.send_extended(source="hostname:misaka.anchor.net.au", timestamp=None, value="dolorite")
 m.send_extended(source="hostname:misaka.anchor.net.au", timestamp=None, value="I love me some geology")
+
+
+m.send_extended(address=sample_address, timestamp=None, value="Chasing paper")
 
 
 # Jay mentioned something about calling your cleanup functions at the right
