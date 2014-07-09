@@ -32,6 +32,10 @@ def cstring(new_string):
 	# Assume UTF8 input
 	return ffi.new('char[]', bytes(new_string, 'utf8') )
 
+def len_cstring(new_string):
+	# Assume UTF8 input
+	return len(bytes(new_string, 'utf8'))
+
 def is_cnull(maybe_null):
 	return maybe_null == ffi.NULL
 
@@ -149,15 +153,53 @@ class Marquise(object):
 		return self.send_simple(address=address, timestamp=timestamp, value=value)
 
 
-	def send_extended(self, datapoint):
+	def send_extended(self, address=None, source=None, timestamp=None, value=None):
 		"""
-		Queue an extended datapoint (i.e., a string) to be sent by the 
-		Marquise daemon. Returns zero on success and nonzero on failure.
+		Queue an extended datapoint (ie. a string), returns True/False
+		for success.
+		"""
 
-		int marquise_send_extended(marquise_ctx *ctx, uint64_t address, uint64_t timestamp, char *value, size_t value_len);
-		"""
-		pass
-		# will need to call ffi.new and stuff around here to make up the C datatypes and dispatch them.
+		if value is None:
+			# This is dirty, but I don't feel like putting `value`
+			# at the start of the arguments list.
+			raise TypeError("You must supply a `value`.")
+		if address is None and source is None:
+			raise TypeError("You must supply either `address` or `source`.")
+		if address and source:
+			raise TypeError("You must supply `address` or `source`, not both.")
+
+		if source:
+			self.debug("Supplied source: {}".format(source))
+		if address:
+			self.debug("Supplied address: {}".format(address))
+
+		if source:
+			address = self.hash_identifier(source)
+			self.debug("The address will be {}".format(address))
+
+		# timestamp is nanoseconds since epoch
+		if timestamp is None:
+			timestamp = self.current_timestamp()
+
+		# Will need to call ffi.new and stuff around here to make up the C datatypes and dispatch them.
+		# FFI will take care of converting them to the right endianness. I think.
+		c_address =   ffi.cast("uint64_t", address)
+		c_timestamp = ffi.cast("uint64_t", timestamp)
+		# c_value needs to be a byte array with a length in bytes
+		c_value =     cstring(value)
+		c_length =    ffi.cast("size_t", len_cstring(value))
+		self.debug("Sending extended value '{}' with length of {}".format(value, c_length))
+
+		retval = c_libmarquise.marquise_send_extended(self.marquise_ctx, c_address, c_timestamp, c_value, c_length);
+		self.debug("send_extended retval is {}".format(retval))
+
+		# XXX: Gotta free anything here? c_address/c_timestamp/c_value
+		# will fall out of scope in a sec anyway.
+
+		return True if retval == 0 else False
+
+
+
 
 
 	# These functions are about building and submitting a dictionary of
@@ -184,7 +226,7 @@ class Marquise(object):
 
 # Test calling the hash function
 test_identifier = "hostname:fe1.example.com,metric:BytesUsed,service:memory,"
-# Should print 7602883380529707052
+print("This should print 7602883380529707052:")
 print(Marquise.hash_identifier(test_identifier) )
 
 
@@ -203,6 +245,12 @@ m.send_simple_source(test_identifier, None, 42)
 m.send_simple_source("hostname:misaka.anchor.net.au,metric:BytesTx,service:network,", None, 42)
 m.send_simple_source("hostname:misaka.anchor.net.au,metric:BytesTx,service:network,", None, 100)
 m.send_simple_source("hostname:misaka.anchor.net.au,metric:BytesTx,service:network,", None, 9000)
+
+m.send_extended(source="hostname:misaka.anchor.net.au", timestamp=None, value="foobar")
+m.send_extended(source="hostname:misaka.anchor.net.au", timestamp=None, value="lorem ipsum")
+m.send_extended(source="hostname:misaka.anchor.net.au", timestamp=None, value="dolor")
+m.send_extended(source="hostname:misaka.anchor.net.au", timestamp=None, value="dolorite")
+m.send_extended(source="hostname:misaka.anchor.net.au", timestamp=None, value="I love me some geology")
 
 
 # Jay mentioned something about calling your cleanup functions at the right
