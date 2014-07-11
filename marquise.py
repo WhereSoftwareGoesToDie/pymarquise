@@ -288,6 +288,15 @@ m.send_extended(source="hostname:misaka.anchor.net.au", timestamp=None, value="I
 m.send_extended(address=sample_address, timestamp=None, value="Chasing paper")
 
 
+print("----- source dict update ---\n\n")
+
+sample_source_dict = { 'foofoofoo':"barbarbar", 'lolololol':"catte", 'something else altogether':"that is rather long indeed", 'test':"source_dict" }
+m.update_source(sample_source_dict, address=sample_address)
+m.update_source(sample_source_dict, source=test_identifier)
+
+
+
+print("----- shutting down ---")
 # Jay mentioned something about calling your cleanup functions at the right
 # time. It's good practice to call close() manually, but as a last-ditch
 # measure you can attach close() to the object's deallocation hooks, with the
