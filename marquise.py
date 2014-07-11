@@ -49,14 +49,6 @@ EINVAL = 2
 c_libmarquise = ffi.verify("""#include "marquise.h" """, include_dirs=[marquise_file()], libraries=['marquise'] )
 
 
-# This shouldn't be needed any more, I don't think CFFI needs to see the C.
-# https://gist.github.com/barneydesmond/8c194e891d96d9cfef9a
-# https://groups.google.com/forum/#!msg/python-cffi/jI7YUafYlwc/FMyGz69rLf8J
-#ffi.verify(open(marquise_file('marquise.c'), 'r').read(), include_dirs=[marquise_file()], libraries=['marquise'] )
-#ffi.verify(sources=[marquise_file('marquise.c')], include_dirs=[marquise_file()], libraries=['marquise'] )
-#ffi.verify("""#include "marquise.h" """, sources=[marquise_file('marquise.c')], include_dirs=[marquise_file()], libraries=['marquise'] )
-
-
 class Marquise(object):
 	#typedef struct {
 	#	char *spool_path;
@@ -131,7 +123,7 @@ class Marquise(object):
 		if timestamp is None:
 			timestamp = self.current_timestamp()
 
-		# Will need to call ffi.new and stuff around here to make up the C datatypes and dispatch them.
+		# Wrap/convert our arguments to C datatypes before dispatching.
 		# FFI will take care of converting them to the right endianness. I think.
 		c_address =   ffi.cast("uint64_t", address)
 		c_timestamp = ffi.cast("uint64_t", timestamp)
