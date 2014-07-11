@@ -194,28 +194,64 @@ class Marquise(object):
 
 
 
+	def update_source(self, metadata_dict, address=None, source=None):
+		"""
+		Pack the incoming dict into a data structure, ship it off to
+		the spool file, then free up your resources.  Raise an
+		exception if anything goes wrong at any stage.
+		"""
+
+		if address is None and source is None:
+			raise TypeError("You must supply either `address` or `source`.")
+		if address and source:
+			raise TypeError("You must supply `address` or `source`, not both.")
+
+		if source:
+			self.debug("Supplied source: {}".format(source))
+		if address:
+			self.debug("Supplied address: {}".format(address))
+
+		if source:
+			address = self.hash_identifier(source)
+			self.debug("The address will be {}".format(address))
 
 
-	# These functions are about building and submitting a dictionary of
-	# key-value pairs of metadata regarding a metric. At a C level it's
-	# about building (malloc'ing), sending, and free'ing a data structure.
-	# We don't really have to care about that, so the Python interface
-	# should just be "submit a dict of metadata for a metric".
+		# Sanity check the input, everything must be UTF8 strings (not
+		# yet confirmed), no Nonetypes or anything stupid like that.
+		#
+		# XXX: The keys of the key-value pairs *must* be unique, right?
+		# Well they will be now because it's a dict coming in.
+		if any([ x is None for x in metadata_dict.keys() ]):
+			raise TypeError("One of your metadata_dict keys is a Nonetype")
+		if any([ x is None for x in metadata_dict.values() ]):
+			raise TypeError("One of your metadata_dict values is a Nonetype")
 
-	def new_source(self, FOO):
-		# Not yet implemented, may be a different sort of class
-		#marquise_source *marquise_new_source(char **fields, char **values, size_t n_tags);
-		pass
+		# Cast each string to a C-string
+		# XXX: This will have unusual results if the inputs are
+		# non-strings, eg. bools become a zero-length string and
+		# numbers are also zero-length but get memory malloc'd
+		# corresponding to their magnitude. Should probably pass
+		# everything through str() first to sanitise.
+		try:                   c_fields = [ cstring(x) for x in metadata_dict.keys() ]
+		except Exception as e: raise TypeError("One of your metadata_dict keys couldn't be cast to a Cstring, {}".format(e))
 
-	def update_source(self, FOO):
-		# Not yet implemented, may be a different sort of class
-		#int marquise_update_source(marquise_ctx *ctx, uint64_t address, marquise_source *source);
-		pass
+		try:                   c_values = [ cstring(x) for x in metadata_dict.values() ]
+		except Exception as e: raise TypeError("One of your metadata_dict values couldn't be cast to a Cstring, {}".format(e))
 
-	def free_source(self, FOO):
-		# Not yet implemented, may be a different sort of class
-		#void marquise_free_source(marquise_source *source);
-		pass
+
+		# Get our source_dict data structure
+		source_dict = c_libmarquise.marquise_new_source(c_fields, c_values, len(metadata_dict))
+		if is_cnull(source_dict):
+			raise ValueError("errno is set to EINVAL on invalid input, our errno is {}".format(ffi.errno))
+
+
+		success = c_libmarquise.marquise_update_source(self.marquise_ctx, address, source_dict)
+		self.debug("marquise_update_source returned {}".format(success))
+		if success != 0:
+			raise RuntimeError("marquise_update_source was unsuccessful, errno is {}".format(ffi.errno))
+		c_libmarquise.marquise_free_source(source_dict)
+
+
 
 
 # Test calling the hash function
