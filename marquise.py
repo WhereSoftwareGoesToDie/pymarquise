@@ -51,7 +51,8 @@ c_libmarquise = ffi.verify("""#include "marquise.h" """, include_dirs=[marquise_
 
 class Marquise(object):
 	#typedef struct {
-	#	char *spool_path;
+	#	char *spool_path_points;
+	#	char *spool_path_contents;
 	#	FILE *spool;
 	#} marquise_ctx;
 
@@ -70,17 +71,18 @@ class Marquise(object):
 				raise ValueError("Invalid namespace: {}".format(namespace))
 			raise RuntimeError("Something went wrong, got NULL instead of a marquise_ctx. build_spool_path() failed, or malloc failed. errno is {}".format(ffi.errno))
 
-		self.spool_path = cprint(self.marquise_ctx.spool_path)
+		self.spool_path_points   = cprint(self.marquise_ctx.spool_path_points)
+		self.spool_path_contents = cprint(self.marquise_ctx.spool_path_contents)
 
 	def __str__(self):
-		return "<Marquise handle spooling to {}>".format(self.spool_path)
+		return "<Marquise handle spooling to {} and {}>".format(self.spool_path_points, self.spool_path_contents)
 
 	def debug(self, msg):
 		if self.debug_enabled:
 			print("DEBUG: {}".format(msg))
 
 	def close(self):
-		self.debug("Shutting down Marquise handle spooling to {}".format(self.spool_path))
+		self.debug("Shutting down Marquise handle spooling to {} and {}".format(self.spool_path_points, self.spool_path_contents))
 		c_libmarquise.marquise_shutdown(self.marquise_ctx)
 		# return None, shutdown always succeeds
 
