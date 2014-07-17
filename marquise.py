@@ -1,18 +1,42 @@
+# Written to target Python 3.x exclusively.
+
 import os
 import time
 from cffi import FFI
 
 ffi = FFI()
 
+# Assume that you've symlinked marquise.h to this directory.
+LIBMARQUISE_SRC_PATH = './'
 
-LIBMARQUISE_SRC_PATH = '/home/barney/git/libmarquise/src'
+# XXX: This is a lazy hack alternative to fetching the real definition of
+# EINVAL.
+EINVAL = 2
+
+def cprint(ffi_string):
+	"""Return a UTF-8 Python string for an FFI bytestring."""
+	return str(ffi.string(ffi_string), 'utf8')
+
+def cstring(new_string):
+	"""Return a new FFI string for a provided UTF-8 Python string."""
+	return ffi.new('char[]', bytes(new_string, 'utf8') )
+
+def len_cstring(new_string):
+	"""Return the length in bytes for a UTF-8 Python string."""
+	return len(bytes(new_string, 'utf8'))
+
+def is_cnull(maybe_null):
+	"""Return True if `maybe_null` is a null pointer, otherwise return False."""
+	return maybe_null == ffi.NULL
+
 def marquise_file(filename=''):
+	"""Given a filename, return its path in the libmarquise source tree."""
 	return os.path.join(LIBMARQUISE_SRC_PATH, filename)
-
 
 # This kinda beats dragging the header file in here manually, assuming you can
 # clean it up suitably.
 def get_libmarquise_header():
+	"""Read the canonical marquise headers to extract definitions."""
 	with open(marquise_file('marquise.h')) as f:
 		libmarquise_header_lines = f.readlines()
 
@@ -20,28 +44,11 @@ def get_libmarquise_header():
 	libmarquise_header_lines = [ line for line in libmarquise_header_lines if not line.startswith('#include ') ]
 	return ''.join(libmarquise_header_lines)
 
-# Get all our cdefs from the headers
+
+
+
+# Get all our cdefs from the headers.
 ffi.cdef(get_libmarquise_header())
-
-
-def cprint(ffi_string):
-	# ffi.string() returns bytes()
-	return str(ffi.string(ffi_string), 'utf8')
-
-def cstring(new_string):
-	# Assume UTF8 input
-	return ffi.new('char[]', bytes(new_string, 'utf8') )
-
-def len_cstring(new_string):
-	# Assume UTF8 input
-	return len(bytes(new_string, 'utf8'))
-
-def is_cnull(maybe_null):
-	return maybe_null == ffi.NULL
-
-EINVAL = 2
-
-
 
 
 # Throw libmarquise at CFFI, let it do the hard work. This gives us
@@ -50,19 +57,21 @@ c_libmarquise = ffi.verify("""#include "marquise.h" """, include_dirs=[marquise_
 
 
 class Marquise(object):
-	#typedef struct {
-	#	char *spool_path_points;
-	#	char *spool_path_contents;
-	#	FILE *spool;
-	#} marquise_ctx;
 
-	#typedef struct {
-	#	char **fields;
-	#	char **values;
-	#	size_t n_tags;
-	#} marquise_source;
+	"""
+	This libmarquise binding provides an interface to submit simple and
+	extended datapoints, and provide "source dictionaries" containing
+	metadata about datapoints.
+	"""
 
 	def __init__(self, namespace, debug=False):
+		"""Establish a marquise context for the provided namespace,
+		getting spool filenames.
+
+		Arguments:
+		namespace -- must be lowercase alphanumeric ([a-z0-9]+).
+		debug -- if debug is True, debugging output will be printed.
+		"""
 		self.debug_enabled = debug
 		self.namespace_c = cstring(namespace)
 		self.marquise_ctx = c_libmarquise.marquise_init(self.namespace_c)
@@ -75,33 +84,43 @@ class Marquise(object):
 		self.spool_path_contents = cprint(self.marquise_ctx.spool_path_contents)
 
 	def __str__(self):
+		"""Return a human-readable description of the current Marquise context."""
 		return "<Marquise handle spooling to {} and {}>".format(self.spool_path_points, self.spool_path_contents)
 
-	def debug(self, msg):
+	def __debug(self, msg):
+		"""Print `msg` if debugging is enabled on this instance. Intended for internal use."""
 		if self.debug_enabled:
 			print("DEBUG: {}".format(msg))
 
 	def close(self):
-		self.debug("Shutting down Marquise handle spooling to {} and {}".format(self.spool_path_points, self.spool_path_contents))
+		"""Close the Marquise context, ensuring data is flushed and
+		spool files are closed.
+
+		This should always be closed explicitly, as there's no
+		guarantees that it will happen when the instance is deleted.
+		"""
+		self.__debug("Shutting down Marquise handle spooling to {} and {}".format(self.spool_path_points, self.spool_path_contents))
 		c_libmarquise.marquise_shutdown(self.marquise_ctx)
-		# return None, shutdown always succeeds
 
 	@staticmethod
 	def hash_identifier(identifier):
-		"""Performs siphash-2-4 on the input with a fixed all-zeroes key, returnval is an integer"""
+		"""Return the siphash-2-4 of the `identifier`, using a static
+		all-zeroes key.
+
+		The output is an integer, which is used as the `address` of
+		datapoints belonging to the given `identifier` string.
+		"""
 		return c_libmarquise.marquise_hash_identifier(cstring(identifier), len(identifier) )
 		# XXX: do I need to free anything here, or will stuff drop out
 		# of scope cleanly and get cleaned up?
 
 	@staticmethod
 	def current_timestamp():
+		"""Return the current timestamp, nanoseconds since epoch."""
 		return int(time.time() * 1000000000)
 
 	def send_simple(self, address=None, source=None, timestamp=None, value=None):
-		"""
-		Queue a simple datapoint (i.e., a 64-bit word), returns
-		True/False for success.
-		"""
+		"""Queue a simple datapoint (i.e., a 64-bit word), returns True/False for success."""
 
 		if value is None:
 			# This is dirty, but I don't feel like putting `value`
@@ -113,15 +132,14 @@ class Marquise(object):
 			raise TypeError("You must supply `address` or `source`, not both.")
 
 		if source:
-			self.debug("Supplied source: {}".format(source))
+			self.__debug("Supplied source: {}".format(source))
 		if address:
-			self.debug("Supplied address: {}".format(address))
+			self.__debug("Supplied address: {}".format(address))
 
 		if source:
 			address = self.hash_identifier(source)
-			self.debug("The address will be {}".format(address))
+			self.__debug("The address will be {}".format(address))
 
-		# timestamp is nanoseconds since epoch
 		if timestamp is None:
 			timestamp = self.current_timestamp()
 
@@ -132,7 +150,7 @@ class Marquise(object):
 		c_value =     ffi.cast("uint64_t", value)
 
 		retval = c_libmarquise.marquise_send_simple(self.marquise_ctx, c_address, c_timestamp, c_value)
-		self.debug("send_simple retval is {}".format(retval))
+		self.__debug("send_simple retval is {}".format(retval))
 
 		# XXX: Gotta free anything here? c_address/c_timestamp/c_value
 		# will fall out of scope in a sec anyway.
@@ -141,18 +159,16 @@ class Marquise(object):
 
 	# Simple wrappers to skip specifying address/source all the time
 	def send_simple_source(self, source, timestamp, value):
+		"""Given a textual `source`, call send_simple() appropriately."""
 		return self.send_simple(source=source, timestamp=timestamp, value=value)
 
 	def send_simple_address(self, address, timestamp, value):
+		"""Given `address` (a siphash-2-4 integer), call send_simple() appropriately."""
 		return self.send_simple(address=address, timestamp=timestamp, value=value)
 
 
 	def send_extended(self, address=None, source=None, timestamp=None, value=None):
-		"""
-		Queue an extended datapoint (ie. a string), returns True/False
-		for success.
-		"""
-
+		"""Queue an extended datapoint (ie. a string), returns True/False for success."""
 		if value is None:
 			# This is dirty, but I don't feel like putting `value`
 			# at the start of the arguments list.
@@ -163,15 +179,14 @@ class Marquise(object):
 			raise TypeError("You must supply `address` or `source`, not both.")
 
 		if source:
-			self.debug("Supplied source: {}".format(source))
+			self.__debug("Supplied source: {}".format(source))
 		if address:
-			self.debug("Supplied address: {}".format(address))
+			self.__debug("Supplied address: {}".format(address))
 
 		if source:
 			address = self.hash_identifier(source)
-			self.debug("The address will be {}".format(address))
+			self.__debug("The address will be {}".format(address))
 
-		# timestamp is nanoseconds since epoch
 		if timestamp is None:
 			timestamp = self.current_timestamp()
 
@@ -182,10 +197,10 @@ class Marquise(object):
 		# c_value needs to be a byte array with a length in bytes
 		c_value =     cstring(value)
 		c_length =    ffi.cast("size_t", len_cstring(value))
-		self.debug("Sending extended value '{}' with length of {}".format(value, c_length))
+		self.__debug("Sending extended value '{}' with length of {}".format(value, c_length))
 
 		retval = c_libmarquise.marquise_send_extended(self.marquise_ctx, c_address, c_timestamp, c_value, c_length);
-		self.debug("send_extended retval is {}".format(retval))
+		self.__debug("send_extended retval is {}".format(retval))
 
 		# XXX: Gotta free anything here? c_address/c_timestamp/c_value
 		# will fall out of scope in a sec anyway.
@@ -195,26 +210,20 @@ class Marquise(object):
 
 
 	def update_source(self, metadata_dict, address=None, source=None):
-		"""
-		Pack the incoming dict into a data structure, ship it off to
-		the spool file, then free up your resources.  Raise an
-		exception if anything goes wrong at any stage.
-		"""
-
+		"""Pack `metadata_dict` into a data structure and ship it to the spool file."""
 		if address is None and source is None:
 			raise TypeError("You must supply either `address` or `source`.")
 		if address and source:
 			raise TypeError("You must supply `address` or `source`, not both.")
 
 		if source:
-			self.debug("Supplied source: {}".format(source))
+			self.__debug("Supplied source: {}".format(source))
 		if address:
-			self.debug("Supplied address: {}".format(address))
+			self.__debug("Supplied address: {}".format(address))
 
 		if source:
 			address = self.hash_identifier(source)
-			self.debug("The address will be {}".format(address))
-
+			self.__debug("The address will be {}".format(address))
 
 		# Sanity check the input, everything must be UTF8 strings (not
 		# yet confirmed), no Nonetypes or anything stupid like that.
@@ -246,7 +255,7 @@ class Marquise(object):
 
 
 		success = c_libmarquise.marquise_update_source(self.marquise_ctx, address, source_dict)
-		self.debug("marquise_update_source returned {}".format(success))
+		self.__debug("marquise_update_source returned {}".format(success))
 		if success != 0:
 			raise RuntimeError("marquise_update_source was unsuccessful, errno is {}".format(ffi.errno))
 		c_libmarquise.marquise_free_source(source_dict)
