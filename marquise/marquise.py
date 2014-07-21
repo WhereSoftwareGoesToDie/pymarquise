@@ -1,61 +1,7 @@
 # Written to target Python 3.x exclusively.
 
-import os
 import time
-from cffi import FFI
-
-ffi = FFI()
-
-# Assume that you've symlinked marquise.h to this directory.
-LIBMARQUISE_SRC_PATH = './'
-
-# XXX: This is a lazy hack alternative to fetching the real definition of
-# EINVAL.
-EINVAL = 2
-
-def cprint(ffi_string):
-	"""Return a UTF-8 Python string for an FFI bytestring."""
-	return str(ffi.string(ffi_string), 'utf8')
-
-def cstring(new_string):
-	"""Return a new FFI string for a provided UTF-8 Python string."""
-	return ffi.new('char[]', bytes(new_string, 'utf8') )
-
-def len_cstring(new_string):
-	"""Return the length in bytes for a UTF-8 Python string."""
-	return len(bytes(new_string, 'utf8'))
-
-def is_cnull(maybe_null):
-	"""Return True if `maybe_null` is a null pointer, otherwise return False."""
-	return maybe_null == ffi.NULL
-
-def marquise_file(filename=''):
-	"""Given a filename, return its path in the libmarquise source tree."""
-	return os.path.join(LIBMARQUISE_SRC_PATH, filename)
-
-# This kinda beats dragging the header file in here manually, assuming you can
-# clean it up suitably.
-def get_libmarquise_header():
-	"""Read the canonical marquise headers to extract definitions."""
-	with open(marquise_file('marquise.h')) as f:
-		libmarquise_header_lines = f.readlines()
-
-	libmarquise_header_lines = [ line for line in libmarquise_header_lines if not line.startswith('#include ') and not line.startswith('#define ') ]
-	libmarquise_header_lines = [ line for line in libmarquise_header_lines if not line.startswith('#include ') ]
-	return ''.join(libmarquise_header_lines)
-
-
-
-
-# Get all our cdefs from the headers.
-ffi.cdef(get_libmarquise_header())
-
-
-# Throw libmarquise at CFFI, let it do the hard work. This gives us
-# API-level access instead of ABI access, and is generally preferred.
-c_libmarquise = ffi.verify("""#include "marquise.h" """, include_dirs=[marquise_file()], libraries=['marquise'] )
-
-
+from .marquise_cffi import  ffi, EINVAL, cprint, cstring, len_cstring, is_cnull, c_libmarquise
 class Marquise(object):
 
 	"""
@@ -259,56 +205,3 @@ class Marquise(object):
 		if success != 0:
 			raise RuntimeError("marquise_update_source was unsuccessful, errno is {}".format(ffi.errno))
 		c_libmarquise.marquise_free_source(source_dict)
-
-
-
-
-# Test calling the hash function
-test_identifier = "hostname:fe1.example.com,metric:BytesUsed,service:memory,"
-sample_address = 5753895591108871589
-
-print("This should print 7602883380529707052:")
-print(Marquise.hash_identifier(test_identifier) )
-
-
-# Test initialisation
-m = Marquise("mynamespace", debug=True)
-print(m)
-
-
-# Test send_simple()
-m.send_simple_address(5, 100, 200000)
-m.send_simple_address(5, 101, 200001)
-m.send_simple_address(5, 102, 200002)
-m.send_simple_address(5, 103, 200003)
-
-m.send_simple_source(test_identifier, None, 42)
-m.send_simple_source("hostname:misaka.anchor.net.au,metric:BytesTx,service:network,", None, 42)
-m.send_simple_source("hostname:misaka.anchor.net.au,metric:BytesTx,service:network,", None, 100)
-m.send_simple_source("hostname:misaka.anchor.net.au,metric:BytesTx,service:network,", None, 9000)
-
-m.send_extended(source="hostname:misaka.anchor.net.au", timestamp=None, value="foobar")
-m.send_extended(source="hostname:misaka.anchor.net.au", timestamp=None, value="lorem ipsum")
-m.send_extended(source="hostname:misaka.anchor.net.au", timestamp=None, value="dolor")
-m.send_extended(source="hostname:misaka.anchor.net.au", timestamp=None, value="dolorite")
-m.send_extended(source="hostname:misaka.anchor.net.au", timestamp=None, value="I love me some geology")
-
-
-m.send_extended(address=sample_address, timestamp=None, value="Chasing paper")
-
-
-print("----- source dict update ---\n\n")
-
-sample_source_dict = { 'foofoofoo':"barbarbar", 'lolololol':"catte", 'something else altogether':"that is rather long indeed", 'test':"source_dict" }
-m.update_source(sample_source_dict, address=sample_address)
-m.update_source(sample_source_dict, source=test_identifier)
-
-
-
-print("----- shutting down ---")
-# Jay mentioned something about calling your cleanup functions at the right
-# time. It's good practice to call close() manually, but as a last-ditch
-# measure you can attach close() to the object's deallocation hooks, with the
-# caveat that this is *not* guaranteed to be actually run in a timely manner
-# when del(yourObject) occurs.
-m.close()
