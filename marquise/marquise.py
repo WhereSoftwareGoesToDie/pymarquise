@@ -1,7 +1,8 @@
 # Written to target Python 3.x exclusively.
 
 import time
-from .marquise_cffi import  ffi, EINVAL, cprint, cstring, len_cstring, is_cnull, c_libmarquise
+import errno
+from .marquise_cffi import  ffi, cprint, cstring, len_cstring, is_cnull, c_libmarquise
 class Marquise(object):
 
 	"""
@@ -22,7 +23,7 @@ class Marquise(object):
 		self.namespace_c = cstring(namespace)
 		self.marquise_ctx = c_libmarquise.marquise_init(self.namespace_c)
 		if is_cnull(self.marquise_ctx):
-			if ffi.errno == EINVAL:
+			if ffi.errno == errno.EINVAL:
 				raise ValueError("Invalid namespace: {}".format(namespace))
 			raise RuntimeError("Something went wrong, got NULL instead of a marquise_ctx. build_spool_path() failed, or malloc failed. errno is {}".format(ffi.errno))
 

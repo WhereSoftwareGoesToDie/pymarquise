@@ -5,10 +5,6 @@
 from cffi import FFI
 ffi = FFI()
 
-# XXX: This is a lazy hack alternative to fetching the real definition of
-# EINVAL.
-EINVAL = 2
-
 def cprint(ffi_string):
 	"""Return a UTF-8 Python string for an FFI bytestring."""
 	return str(ffi.string(ffi_string), 'utf8')
