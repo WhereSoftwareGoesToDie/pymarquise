@@ -206,3 +206,5 @@ class Marquise(object):
 		if success != 0:
 			raise RuntimeError("marquise_update_source was unsuccessful, errno is {}".format(ffi.errno))
 		c_libmarquise.marquise_free_source(source_dict)
+
+		return True
