@@ -46,8 +46,18 @@ class Marquise(object):
 		This should always be closed explicitly, as there's no
 		guarantees that it will happen when the instance is deleted.
 		"""
+		if self.marquise_ctx is None:
+			self.__debug("Marquise handle is already closed, will do nothing.")
+			# Multiple close() calls are okay.
+			return
+
 		self.__debug("Shutting down Marquise handle spooling to {} and {}".format(self.spool_path_points, self.spool_path_contents))
+
+		# At the time of writing this always succeeds (returns 0).
 		c_libmarquise.marquise_shutdown(self.marquise_ctx)
+
+		# Signal that our context is no longer valid.
+		self.marquise_ctx = None
 
 	@staticmethod
 	def hash_identifier(identifier):
@@ -68,6 +78,8 @@ class Marquise(object):
 
 	def send_simple(self, address=None, source=None, timestamp=None, value=None):
 		"""Queue a simple datapoint (i.e., a 64-bit word), returns True/False for success."""
+		if self.marquise_ctx is None:
+			raise ValueError("Attempted to write to a closed Marquise handle.")
 
 		if value is None:
 			# This is dirty, but I don't feel like putting `value`
@@ -116,6 +128,9 @@ class Marquise(object):
 
 	def send_extended(self, address=None, source=None, timestamp=None, value=None):
 		"""Queue an extended datapoint (ie. a string), returns True/False for success."""
+		if self.marquise_ctx is None:
+			raise ValueError("Attempted to write to a closed Marquise handle.")
+
 		if value is None:
 			# This is dirty, but I don't feel like putting `value`
 			# at the start of the arguments list.
@@ -158,6 +173,9 @@ class Marquise(object):
 
 	def update_source(self, metadata_dict, address=None, source=None):
 		"""Pack `metadata_dict` into a data structure and ship it to the spool file."""
+		if self.marquise_ctx is None:
+			raise ValueError("Attempted to write to a closed Marquise handle.")
+
 		if address is None and source is None:
 			raise TypeError("You must supply either `address` or `source`.")
 		if address and source:
