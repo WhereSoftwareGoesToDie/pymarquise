@@ -4,7 +4,7 @@ import pytest
 from marquise import Marquise
 
 TEST_GOOD_NAMESPACE     = "mytestnamespace"
-TEST_BAD_NAMESPACE      = "3v1l_L33T_BaD_nAmEsPaCe!"
+TEST_BAD_NAMESPACE      = "3v1l_L33T_BaD_nAmEsPaCe!!!!!!"
 TEST_TOO_LONG_NAMESPACE = "thisisaverylongnamespacenamethatislongerthan256charactersbecausethatisallthatisallowedforafilenameinlinux000inthelightofthemoonalittleegglayonaleaf000onesundaymorningthewarmsuncameupandpopoutoftheeggcameatinyandveryhungrycaterpillar000hestartedtolookforsomefood"
 
 TEST_GOOD_ADDRESS    = 5753895591108871589
