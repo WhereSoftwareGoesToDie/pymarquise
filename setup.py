@@ -17,8 +17,8 @@ setup(
     name="marquise",
     version=VERSION,
     description="Python bindings for libmarquise",
-    author="Sharif Olorin",
-    author_email="sio@tesser.org",
+    author="Barney Desmond",
+    author_email="engineering@anchor.net.au",
     url="https://github.com/anchor/pymarquise",
     zip_safe=False,
     packages=[
