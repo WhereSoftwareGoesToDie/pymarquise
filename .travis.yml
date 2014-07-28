@@ -3,5 +3,18 @@ language: python
 python:
   - 3.3
 
+before_install:
+  - git clone https://github.com/anchor/libmarquise.git ../libmarquise/
+  - cd ../libmarquise/
+  - autoreconf -i
+  - ./configure
+  - make
+  - sudo make install
+  - sudo su -c "echo '/usr/local/lib' > /etc/ld.so.conf.d/local.conf"
+  - sudo ldconfig
+  - cd -
+
 # command to run tests
-script: make test
+script:
+  - make test
+  - make test-coverage-of-main-in-testsuite
