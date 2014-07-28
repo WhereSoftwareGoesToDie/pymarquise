@@ -219,7 +219,15 @@ class Marquise(object):
 			raise ValueError("errno is set to EINVAL on invalid input, our errno is {}".format(ffi.errno))
 
 
-		success = c_libmarquise.marquise_update_source(self.marquise_ctx, address, source_dict)
+		# If you do something stupid, like passing a string where an
+		# int (address) is meant to go, CFFI will explode. Which is
+		# fine, but that causes memory leaks. The explosion still
+		# occurs, but we cleanup after (before?) ourselves.
+		try:
+			success = c_libmarquise.marquise_update_source(self.marquise_ctx, address, source_dict)
+		finally:
+			c_libmarquise.marquise_free_source(source_dict)
+			self.close()
 		self.__debug("marquise_update_source returned {}".format(success))
 		if success != 0:
 			raise RuntimeError("marquise_update_source was unsuccessful, errno is {}".format(ffi.errno))
