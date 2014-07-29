@@ -68,36 +68,34 @@ class Marquise(object):
 		datapoints belonging to the given `identifier` string.
 		"""
 		return c_libmarquise.marquise_hash_identifier(cstring(identifier), len(identifier) )
-		# XXX: do I need to free anything here, or will stuff drop out
-		# of scope cleanly and get cleaned up?
 
 	@staticmethod
 	def current_timestamp():
 		"""Return the current timestamp, nanoseconds since epoch."""
 		return int(time.time() * 1000000000)
 
-	def send_simple(self, address=None, source=None, timestamp=None, value=None):
-		"""Queue a simple datapoint (i.e., a 64-bit word), returns True/False for success."""
+
+	def send_simple(self, address, timestamp, value):
+		"""Queue a simple datapoint (ie. a 64-bit word), return True/False for success.
+
+		Arguments:
+		address -- uint64_t representing a unique metric.
+		timestamp -- uint64_t representing number of nanoseconds (10^-9) since epoch.
+		value -- uint64_t value being stored.
+
+		There are no formal restrictions on how `address` is chosen,
+		but it must be unique to the metric you are inserting. If you
+		don't have one, you may generate one by calling
+		`hash_identifier` with a string; the recommended input is the
+		source identifier.
+
+		If you don't have a `timestamp` you may pass in None to have
+		Pymarquise generate one for you.
+		"""
 		if self.marquise_ctx is None:
 			raise ValueError("Attempted to write to a closed Marquise handle.")
 
-		if value is None:
-			# This is dirty, but I don't feel like putting `value`
-			# at the start of the arguments list.
-			raise TypeError("You must supply a `value`.")
-		if address is None and source is None:
-			raise TypeError("You must supply either `address` or `source`.")
-		if address and source:
-			raise TypeError("You must supply `address` or `source`, not both.")
-
-		if source:
-			self.__debug("Supplied source: {}".format(source))
-		if address:
-			self.__debug("Supplied address: {}".format(address))
-
-		if source:
-			address = self.hash_identifier(source)
-			self.__debug("The address will be {}".format(address))
+		self.__debug("Supplied address: {}".format(address))
 
 		if timestamp is None:
 			timestamp = self.current_timestamp()
@@ -111,43 +109,21 @@ class Marquise(object):
 		retval = c_libmarquise.marquise_send_simple(self.marquise_ctx, c_address, c_timestamp, c_value)
 		self.__debug("send_simple retval is {}".format(retval))
 
-		# XXX: Gotta free anything here? c_address/c_timestamp/c_value
-		# will fall out of scope in a sec anyway.
-
 		return True if retval == 0 else False
 
-	# Simple wrappers to skip specifying address/source all the time
-	def send_simple_source(self, source, timestamp, value):
-		"""Given a textual `source`, call send_simple() appropriately."""
-		return self.send_simple(source=source, timestamp=timestamp, value=value)
 
-	def send_simple_address(self, address, timestamp, value):
-		"""Given `address` (a siphash-2-4 integer), call send_simple() appropriately."""
-		return self.send_simple(address=address, timestamp=timestamp, value=value)
+	def send_extended(self, address, timestamp, value):
+		"""Queue an extended datapoint (ie. a string), return True/False for success.
 
-
-	def send_extended(self, address=None, source=None, timestamp=None, value=None):
-		"""Queue an extended datapoint (ie. a string), returns True/False for success."""
+		Arguments:
+		address -- uint64_t representing a unique metric.
+		timestamp -- uint64_t representing number of nanoseconds (10^-9) since epoch.
+		value -- string value being stored.
+		"""
 		if self.marquise_ctx is None:
 			raise ValueError("Attempted to write to a closed Marquise handle.")
 
-		if value is None:
-			# This is dirty, but I don't feel like putting `value`
-			# at the start of the arguments list.
-			raise TypeError("You must supply a `value`.")
-		if address is None and source is None:
-			raise TypeError("You must supply either `address` or `source`.")
-		if address and source:
-			raise TypeError("You must supply `address` or `source`, not both.")
-
-		if source:
-			self.__debug("Supplied source: {}".format(source))
-		if address:
-			self.__debug("Supplied address: {}".format(address))
-
-		if source:
-			address = self.hash_identifier(source)
-			self.__debug("The address will be {}".format(address))
+		self.__debug("Supplied address: {}".format(address))
 
 		if timestamp is None:
 			timestamp = self.current_timestamp()
@@ -164,37 +140,26 @@ class Marquise(object):
 		retval = c_libmarquise.marquise_send_extended(self.marquise_ctx, c_address, c_timestamp, c_value, c_length);
 		self.__debug("send_extended retval is {}".format(retval))
 
-		# XXX: Gotta free anything here? c_address/c_timestamp/c_value
-		# will fall out of scope in a sec anyway.
-
 		return True if retval == 0 else False
 
 
+	def update_source(self, address, metadata_dict):
+		"""Pack the `metadata_dict` for an `address` into a data structure and ship it to the spool file.
 
-	def update_source(self, metadata_dict, address=None, source=None):
-		"""Pack `metadata_dict` into a data structure and ship it to the spool file."""
+		Arguments:
+		address -- the address for which this metadata_dict applies.
+		metadata_dict -- a Python dict of arbitrary string key-value pairs.
+		"""
 		if self.marquise_ctx is None:
 			raise ValueError("Attempted to write to a closed Marquise handle.")
 
-		if address is None and source is None:
-			raise TypeError("You must supply either `address` or `source`.")
-		if address and source:
-			raise TypeError("You must supply `address` or `source`, not both.")
-
-		if source:
-			self.__debug("Supplied source: {}".format(source))
-		if address:
-			self.__debug("Supplied address: {}".format(address))
-
-		if source:
-			address = self.hash_identifier(source)
-			self.__debug("The address will be {}".format(address))
+		self.__debug("Supplied address: {}".format(address))
 
 		# Sanity check the input, everything must be UTF8 strings (not
 		# yet confirmed), no Nonetypes or anything stupid like that.
 		#
-		# XXX: The keys of the key-value pairs *must* be unique, right?
-		# Well they will be now because it's a dict coming in.
+		# The keys of the key-value pairs are unique, by virtue of
+		# taking a dict as input.
 		if any([ x is None for x in metadata_dict.keys() ]):
 			raise TypeError("One of your metadata_dict keys is a Nonetype")
 		if any([ x is None for x in metadata_dict.values() ]):
@@ -212,12 +177,10 @@ class Marquise(object):
 		try:                   c_values = [ cstring(x) for x in metadata_dict.values() ]
 		except Exception as e: raise TypeError("One of your metadata_dict values couldn't be cast to a Cstring, {}".format(e))
 
-
 		# Get our source_dict data structure
 		source_dict = c_libmarquise.marquise_new_source(c_fields, c_values, len(metadata_dict))
 		if is_cnull(source_dict):
 			raise ValueError("errno is set to EINVAL on invalid input, our errno is {}".format(ffi.errno))
-
 
 		# If you do something stupid, like passing a string where an
 		# int (address) is meant to go, CFFI will explode. Which is

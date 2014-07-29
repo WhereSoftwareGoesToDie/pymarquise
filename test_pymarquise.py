@@ -51,33 +51,14 @@ def test_print_a_marquise_with_debugging():
 def test_send_simple():
 	m = Marquise(TEST_GOOD_NAMESPACE, debug=DEBUG)
 	# Normal use specifying address directly
-	assert m.send_simple(address=TEST_GOOD_ADDRESS, value=42)
+	assert m.send_simple(address=TEST_GOOD_ADDRESS, timestamp=None, value=42)
+	assert m.send_simple(address=TEST_GOOD_ADDRESS, timestamp=1234567890, value=42)
 	# Non-simple value
 	with pytest.raises(TypeError):
-		m.send_simple(address=TEST_GOOD_ADDRESS, value="pantsu")
+		m.send_simple(address=TEST_GOOD_ADDRESS, timestamp=None, value="pantsu")
 	# Non-numeric address
 	with pytest.raises(TypeError):
-		m.send_simple(address=TEST_SOURCE1, value=42)
-	# Normal use with textual source
-	assert m.send_simple(source=TEST_SOURCE1, value=42)
-	m.close()
-
-
-def test_send_simple_address():
-	m = Marquise(TEST_GOOD_NAMESPACE, debug=DEBUG)
-	assert m.send_simple_address(5, 100, 200000)
-	assert m.send_simple_address(5, 101, 200001)
-	assert m.send_simple_address(5, 102, 200002)
-	assert m.send_simple_address(5, 103, 200003)
-	m.close()
-
-
-def test_send_simple_source():
-	m = Marquise(TEST_GOOD_NAMESPACE, debug=DEBUG)
-	assert m.send_simple_source(TEST_IDENTIFIER, None, 42)
-	assert m.send_simple_source(TEST_SOURCE1,    None, 42)
-	assert m.send_simple_source(TEST_SOURCE1,    None, 100)
-	assert m.send_simple_source(TEST_SOURCE1,    None, 9000)
+		m.send_simple(address=TEST_SOURCE1, timestamp=None, value=42)
 	m.close()
 
 
@@ -85,7 +66,7 @@ def test_send_simple_after_close():
 	m = Marquise(TEST_GOOD_NAMESPACE, debug=DEBUG)
 	m.close()
 	with pytest.raises(ValueError):
-		m.send_simple(address=TEST_GOOD_ADDRESS, value=42)
+		m.send_simple(address=TEST_GOOD_ADDRESS, timestamp=None, value=42)
 	assert m.close() is None
 
 
@@ -104,15 +85,13 @@ def test_how_do_i_even_call_send_simple_omg():
 
 def test_send_extended():
 	m = Marquise(TEST_GOOD_NAMESPACE, debug=DEBUG)
-	assert m.send_extended(source=TEST_SOURCE2, timestamp=None, value="foobar")
-	assert m.send_extended(source=TEST_SOURCE2, timestamp=None, value="lorem ipsum")
-	assert m.send_extended(source=TEST_SOURCE2, timestamp=None, value="dolor")
-	assert m.send_extended(source=TEST_SOURCE2, timestamp=None, value="dolorite")
-	assert m.send_extended(source=TEST_SOURCE2, timestamp=None, value="I love me some geology")
-	assert m.send_extended(address=TEST_GOOD_ADDRESS, timestamp=None, value="Chasing paper")
+	assert m.send_extended(address=TEST_GOOD_ADDRESS, timestamp=None, value="lorem ipsum")
+	assert m.send_extended(address=TEST_GOOD_ADDRESS, timestamp=1234567890, value="dolor")
+	assert m.send_extended(address=TEST_GOOD_ADDRESS, timestamp=None, value="dolorite")
+	assert m.send_extended(address=TEST_GOOD_ADDRESS, timestamp=9001, value="I love me some geology")
 	m.close()
 	with pytest.raises(ValueError):
-		m.send_extended(address=TEST_GOOD_ADDRESS, value="This is a closed handle.")
+		m.send_extended(address=TEST_GOOD_ADDRESS, timestamp=None, value="This is a closed handle.")
 	assert m.close() is None
 
 
@@ -129,32 +108,30 @@ def test_i_cannot_even_send_extended_wtf():
 
 def test_update_source():
 	m = Marquise(TEST_GOOD_NAMESPACE, debug=DEBUG)
-	assert m.update_source(TEST_GOOD_SOURCE_DICT, address=TEST_GOOD_ADDRESS)
+	assert m.update_source(TEST_GOOD_ADDRESS, TEST_GOOD_SOURCE_DICT)
 	with pytest.raises(TypeError):
-		m.update_source(TEST_GOOD_SOURCE_DICT, address=TEST_BAD_ADDRESS)
-
-	assert m.update_source(TEST_GOOD_SOURCE_DICT, source=TEST_IDENTIFIER)
+		m.update_source(TEST_BAD_ADDRESS, TEST_GOOD_SOURCE_DICT)
 
 	with pytest.raises(TypeError):
-		m.update_source(TEST_BAD_SOURCE_DICT_NONE_KEY, address=TEST_GOOD_ADDRESS)
+		m.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_NONE_KEY)
 	with pytest.raises(TypeError):
-		m.update_source(TEST_BAD_SOURCE_DICT_NONE_VAL, address=TEST_GOOD_ADDRESS)
+		m.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_NONE_VAL)
 
 	with pytest.raises(TypeError):
-		m.update_source(TEST_BAD_SOURCE_DICT_EXC_KEY, address=TEST_GOOD_ADDRESS)
+		m.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_EXC_KEY)
 	with pytest.raises(TypeError):
-		m.update_source(TEST_BAD_SOURCE_DICT_EXC_VAL, address=TEST_GOOD_ADDRESS)
+		m.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_EXC_VAL)
 
 	with pytest.raises(ValueError):
-		m.update_source(TEST_BAD_SOURCE_DICT_COLON_KEY, address=TEST_GOOD_ADDRESS)
+		m.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_COLON_KEY)
 	with pytest.raises(ValueError):
-		m.update_source(TEST_BAD_SOURCE_DICT_COLON_VAL, address=TEST_GOOD_ADDRESS)
+		m.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_COLON_VAL)
 
 	# Cleanly close.
 	m.close()
 	# Detonate it.
 	with pytest.raises(ValueError):
-		m.update_source(TEST_GOOD_SOURCE_DICT, address=TEST_GOOD_ADDRESS)
+		m.update_source(TEST_GOOD_ADDRESS, TEST_GOOD_SOURCE_DICT)
 	# Double-close is safe.
 	assert m.close() is None
 
@@ -164,7 +141,7 @@ def test_update_source_write_failure():
 	# Cause the write to fail due to the file being read-only.
 	os.chmod(m.spool_path_contents, 0o400)
 	with pytest.raises(RuntimeError) as excinfo:
-		m.update_source(TEST_GOOD_SOURCE_DICT, address=TEST_GOOD_ADDRESS)
+		m.update_source(TEST_GOOD_ADDRESS, TEST_GOOD_SOURCE_DICT)
 	assert excinfo.value.args[0].endswith("errno is 13")
 	m.close()
 
@@ -189,8 +166,6 @@ if __name__ == '__main__':
 	test_very_very_very_long_namespace()
 	test_print_a_marquise_with_debugging()
 	test_send_simple()
-	test_send_simple_address()
-	test_send_simple_source()
 	test_send_simple_after_close()
 	test_how_do_i_even_call_send_simple_omg()
 	test_send_extended()
