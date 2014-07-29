@@ -225,12 +225,14 @@ class Marquise(object):
 		# occurs, but we cleanup after (before?) ourselves.
 		try:
 			success = c_libmarquise.marquise_update_source(self.marquise_ctx, address, source_dict)
-		finally:
+		except TypeError as e:
 			c_libmarquise.marquise_free_source(source_dict)
-			self.close()
+			raise
+
 		self.__debug("marquise_update_source returned {}".format(success))
 		if success != 0:
+			c_libmarquise.marquise_free_source(source_dict)
 			raise RuntimeError("marquise_update_source was unsuccessful, errno is {}".format(ffi.errno))
-		c_libmarquise.marquise_free_source(source_dict)
 
+		c_libmarquise.marquise_free_source(source_dict)
 		return True
