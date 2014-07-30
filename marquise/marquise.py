@@ -119,6 +119,9 @@ class Marquise(object):
 
 		self.__debug("Supplied address: {}".format(address))
 
+		if value is None:
+			raise TypeError("Can't store None as a value.")
+
 		if timestamp is None:
 			timestamp = self.current_timestamp()
 
@@ -129,9 +132,10 @@ class Marquise(object):
 		c_value =     FFI.cast("uint64_t", value)
 
 		success = MARQUISE_SEND_SIMPLE(self.marquise_ctx, c_address, c_timestamp, c_value)
-		self.__debug("send_simple returned {}".format(success))
 		if success != 0:
+			self.__debug("send_simple returned {}, raising exception".format(success))
 			raise RuntimeError("send_simple was unsuccessful, errno is {}".format(FFI.errno))
+		self.__debug("send_simple returned {}".format(success))
 
 		return True
 
@@ -142,12 +146,17 @@ class Marquise(object):
 		Arguments:
 		address -- uint64_t representing a unique metric.
 		timestamp -- uint64_t representing number of nanoseconds (10^-9) since epoch.
-		value -- string value being stored.
+		value -- value being stored, it will be str()'d before being stored.
 		"""
 		if self.marquise_ctx is None:
 			raise ValueError("Attempted to write to a closed Marquise handle.")
 
 		self.__debug("Supplied address: {}".format(address))
+
+		if value is None:
+			raise TypeError("Can't store None as a value.")
+
+		value = str(value)
 
 		if timestamp is None:
 			timestamp = self.current_timestamp()
@@ -162,9 +171,10 @@ class Marquise(object):
 		self.__debug("Sending extended value '{}' with length of {}".format(value, c_length))
 
 		success = MARQUISE_SEND_EXTENDED(self.marquise_ctx, c_address, c_timestamp, c_value, c_length)
-		self.__debug("send_extended returned {}".format(success))
 		if success != 0:
+			self.__debug("send_extended returned {}, raising exception".format(success))
 			raise RuntimeError("send_extended was unsuccessful, errno is {}".format(FFI.errno))
+		self.__debug("send_extended returned {}".format(success))
 
 		return True
 
@@ -191,17 +201,15 @@ class Marquise(object):
 		if any([ x is None for x in metadata_dict.values() ]):
 			raise TypeError("One of your metadata_dict values is a Nonetype")
 
-		# Cast each string to a C-string
-		# XXX: This will have unusual results if the inputs are
-		# non-strings, eg. bools become a zero-length string and
-		# numbers are also zero-length but get memory malloc'd
-		# corresponding to their magnitude. Should probably pass
-		# everything through str() first to sanitise.
+		# Cast each string to a C-string. This may have unusual results
+		# if your keys/vals aren't particularly stringy, such as Python
+		# classes, Exceptions, etc. They will get str()'d, and they may
+		# look stupid.
 		# pylint: disable=multiple-statements
-		try:                     c_fields = [ cstring(x) for x in metadata_dict.keys() ]
+		try:                     c_fields = [ cstring(str(x)) for x in metadata_dict.keys() ]
 		except Exception as exc: raise TypeError("One of your metadata_dict keys couldn't be cast to a Cstring, {}".format(exc))
 
-		try:                     c_values = [ cstring(x) for x in metadata_dict.values() ]
+		try:                     c_values = [ cstring(str(x)) for x in metadata_dict.values() ]
 		except Exception as exc: raise TypeError("One of your metadata_dict values couldn't be cast to a Cstring, {}".format(exc))
 		# pylint: enable=multiple-statements
 

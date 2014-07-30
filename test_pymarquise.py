@@ -25,15 +25,23 @@ TEST_BAD_ADDRESS     = "HA HA I'M USING THE INTERNET"
 
 TEST_IDENTIFIER      = "hostname:fe1.example.com,metric:BytesUsed,service:memory,"
 TEST_SOURCE1         = "hostname:misaka.anchor.net.au,metric:BytesTx,service:network,"
-TEST_SOURCE2         = "hostname:misaka.anchor.net.au"
 
-TEST_GOOD_SOURCE_DICT          = { 'foofoofoo':"barbarbar", 'lolololol':"catte",    'something else altogether':"that is rather long indeed", 'test':"source_dict" }
-TEST_BAD_SOURCE_DICT_NONE_KEY  = { None:"barbarbar",        'trolololol':"catte",   'something else altogether':"that is rather long indeed", 'test':"source_dict" }
-TEST_BAD_SOURCE_DICT_NONE_VAL  = { "foofoofoo":"barbarbar", 'trolololol':None,      'something else altogether':"that is rather long indeed", 'test':"source_dict" }
-TEST_BAD_SOURCE_DICT_EXC_KEY   = { Exception:"barbarbar",   'trolololol':"catte",   'something else altogether':"that is rather long indeed", 'test':"source_dict" }
-TEST_BAD_SOURCE_DICT_EXC_VAL   = { 'foofoofoo':Exception,   'trolololol':"catte",   'something else altogether':"that is rather long indeed", 'test':"source_dict" }
-TEST_BAD_SOURCE_DICT_COLON_KEY = { 'foo:::foo':"barbarbar", 'trolololol':"catte",   'something else altogether':"that is rather long indeed", 'test':"source_dict" }
-TEST_BAD_SOURCE_DICT_COLON_VAL = { 'foofoofoo':"bar:::bar", 'trolololol':"catte",   'something else altogether':"that is rather long indeed", 'test':"source_dict" }
+class Unstringifiable(object):
+
+	"""This class produces instances that are deliberately unstringifiable,
+	which can trigger properly trigger our testcases for 100% coverage.
+	"""
+
+	__str__ = None
+UNSTRINGABLE = Unstringifiable()
+
+TEST_GOOD_SOURCE_DICT          = { 'foofoofoo':"barbarbar",  'lolololol':"catte",    'something else altogether':"that is rather long indeed", 'test':"source_dict" }
+TEST_BAD_SOURCE_DICT_NONE_KEY  = { None:"barbarbar",         'trolololol':"catte",   'something else altogether':"that is rather long indeed", 'test':"source_dict" }
+TEST_BAD_SOURCE_DICT_NONE_VAL  = { "foofoofoo":"barbarbar",  'trolololol':None,      'something else altogether':"that is rather long indeed", 'test':"source_dict" }
+TEST_BAD_SOURCE_DICT_COLON_KEY = { 'foo:::foo':"barbarbar",  'trolololol':"catte",   'something else altogether':"that is rather long indeed", 'test':"source_dict" }
+TEST_BAD_SOURCE_DICT_COLON_VAL = { 'foofoofoo':"bar:::bar",  'trolololol':"catte",   'something else altogether':"that is rather long indeed", 'test':"source_dict" }
+TEST_BAD_SOURCE_DICT_UNSTR_KEY = { UNSTRINGABLE:"barbarbar", 'trolololol':"catte",   'something else altogether':"that is rather long indeed", 'test':"source_dict" }
+TEST_BAD_SOURCE_DICT_UNSTR_VAL = { 'foofoofoo':UNSTRINGABLE, 'trolololol':"catte",   'something else altogether':"that is rather long indeed", 'test':"source_dict" }
 
 DEBUG = False
 
@@ -163,16 +171,16 @@ def test_update_source():
 		marq.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_NONE_KEY)
 	with RAISES(TypeError):
 		marq.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_NONE_VAL)
-	# Keys and values set to Exception, a Python class that can't be cast to anything C
-	with RAISES(TypeError):
-		marq.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_EXC_KEY)
-	with RAISES(TypeError):
-		marq.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_EXC_VAL)
 	# Keys and values containing colons, which are invalid
 	with RAISES(ValueError):
 		marq.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_COLON_KEY)
 	with RAISES(ValueError):
 		marq.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_COLON_VAL)
+	# Keys and values that cannot be stringified, Python should explode
+	with RAISES(TypeError):
+		marq.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_UNSTR_KEY)
+	with RAISES(TypeError):
+		marq.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_UNSTR_VAL)
 	marq.close()
 
 
