@@ -1,30 +1,28 @@
-#! /usr/bin/env python
+from setuptools import setup
 
-from distutils.core import setup
-from distutils.extension import Extension
-from Cython.Build import cythonize
+import marquise.marquise
+extension = marquise.marquise.ffi.verifier.get_extension()
 
-extensions = [
-    Extension(
-        "_marquise", 
-        ["marquise/_marquise.pyx"],
-        include_dirs=["marquise"],
-        libraries=["marquise"],
-    ),
-]
+with open('VERSION', 'r') as f:
+	VERSION = f.readline().strip()
+
+
+# These notes suggest that there's not yet any "correct" way to do packageable
+# CFFI interfaces. For now I'm splitting the CFFI stuff from the python
+# interface stuff, and it seems to do the job okay, though dealing with
+# packages and modules is a flailfest at best for me.
+# https://bitbucket.org/cffi/cffi/issue/109/enable-sane-packaging-for-cffi
 
 setup(
     name="marquise",
-    version="1.2.2",
+    version=VERSION,
     description="Python bindings for libmarquise",
-    author="Sharif Olorin",
-    author_email="sio@tesser.org",
+    author="Barney Desmond",
+    author_email="engineering@anchor.net.au",
     url="https://github.com/anchor/pymarquise",
+    zip_safe=False,
     packages=[
         "marquise",
     ],
-    requires=[
-        "pyzmq",
-    ],
-    ext_modules = cythonize(extensions),
+    ext_modules = [extension],
 )

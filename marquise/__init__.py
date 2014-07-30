@@ -1,1 +1,1 @@
-from _marquise import Marquise
+from .marquise import Marquise
