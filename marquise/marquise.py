@@ -2,7 +2,7 @@
 
 import time
 import errno
-from .marquise_cffi import  ffi, cprint, cstring, len_cstring, is_cnull, c_libmarquise
+from .marquise_cffi import FFI, cprint, cstring, len_cstring, is_cnull, C_LIBMARQUISE
 class Marquise(object):
 
 	"""
@@ -21,11 +21,11 @@ class Marquise(object):
 		"""
 		self.debug_enabled = debug
 		self.namespace_c = cstring(namespace)
-		self.marquise_ctx = c_libmarquise.marquise_init(self.namespace_c)
+		self.marquise_ctx = C_LIBMARQUISE.marquise_init(self.namespace_c)
 		if is_cnull(self.marquise_ctx):
-			if ffi.errno == errno.EINVAL:
+			if FFI.errno == errno.EINVAL:
 				raise ValueError("Invalid namespace: {}".format(namespace))
-			raise RuntimeError("Something went wrong, got NULL instead of a marquise_ctx. build_spool_path() failed, or malloc failed. errno is {}".format(ffi.errno))
+			raise RuntimeError("Something went wrong, got NULL instead of a marquise_ctx. build_spool_path() failed, or malloc failed. errno is {}".format(FFI.errno))
 
 		self.spool_path_points   = cprint(self.marquise_ctx.spool_path_points)
 		self.spool_path_contents = cprint(self.marquise_ctx.spool_path_contents)
@@ -54,7 +54,7 @@ class Marquise(object):
 		self.__debug("Shutting down Marquise handle spooling to {} and {}".format(self.spool_path_points, self.spool_path_contents))
 
 		# At the time of writing this always succeeds (returns 0).
-		c_libmarquise.marquise_shutdown(self.marquise_ctx)
+		C_LIBMARQUISE.marquise_shutdown(self.marquise_ctx)
 
 		# Signal that our context is no longer valid.
 		self.marquise_ctx = None
@@ -67,7 +67,7 @@ class Marquise(object):
 		The output is an integer, which is used as the `address` of
 		datapoints belonging to the given `identifier` string.
 		"""
-		return c_libmarquise.marquise_hash_identifier(cstring(identifier), len(identifier) )
+		return C_LIBMARQUISE.marquise_hash_identifier(cstring(identifier), len(identifier) )
 
 	@staticmethod
 	def current_timestamp():
@@ -102,14 +102,14 @@ class Marquise(object):
 
 		# Wrap/convert our arguments to C datatypes before dispatching.
 		# FFI will take care of converting them to the right endianness. I think.
-		c_address =   ffi.cast("uint64_t", address)
-		c_timestamp = ffi.cast("uint64_t", timestamp)
-		c_value =     ffi.cast("uint64_t", value)
+		c_address =   FFI.cast("uint64_t", address)
+		c_timestamp = FFI.cast("uint64_t", timestamp)
+		c_value =     FFI.cast("uint64_t", value)
 
-		success = c_libmarquise.marquise_send_simple(self.marquise_ctx, c_address, c_timestamp, c_value)
+		success = C_LIBMARQUISE.marquise_send_simple(self.marquise_ctx, c_address, c_timestamp, c_value)
 		self.__debug("send_simple returned {}".format(success))
 		if success != 0:
-			raise RuntimeError("send_simple was unsuccessful, errno is {}".format(ffi.errno))
+			raise RuntimeError("send_simple was unsuccessful, errno is {}".format(FFI.errno))
 
 		return True
 
@@ -130,19 +130,19 @@ class Marquise(object):
 		if timestamp is None:
 			timestamp = self.current_timestamp()
 
-		# Will need to call ffi.new and stuff around here to make up the C datatypes and dispatch them.
+		# Use cast() here to make up the C datatypes for dispatch.
 		# FFI will take care of converting them to the right endianness. I think.
-		c_address =   ffi.cast("uint64_t", address)
-		c_timestamp = ffi.cast("uint64_t", timestamp)
+		c_address =   FFI.cast("uint64_t", address)
+		c_timestamp = FFI.cast("uint64_t", timestamp)
 		# c_value needs to be a byte array with a length in bytes
 		c_value =     cstring(value)
-		c_length =    ffi.cast("size_t", len_cstring(value))
+		c_length =    FFI.cast("size_t", len_cstring(value))
 		self.__debug("Sending extended value '{}' with length of {}".format(value, c_length))
 
-		success = c_libmarquise.marquise_send_extended(self.marquise_ctx, c_address, c_timestamp, c_value, c_length);
+		success = C_LIBMARQUISE.marquise_send_extended(self.marquise_ctx, c_address, c_timestamp, c_value, c_length);
 		self.__debug("send_extended returned {}".format(success))
 		if success != 0:
-			raise RuntimeError("send_extended was unsuccessful, errno is {}".format(ffi.errno))
+			raise RuntimeError("send_extended was unsuccessful, errno is {}".format(FFI.errno))
 
 		return True
 
@@ -182,24 +182,24 @@ class Marquise(object):
 		except Exception as e: raise TypeError("One of your metadata_dict values couldn't be cast to a Cstring, {}".format(e))
 
 		# Get our source_dict data structure
-		source_dict = c_libmarquise.marquise_new_source(c_fields, c_values, len(metadata_dict))
+		source_dict = C_LIBMARQUISE.marquise_new_source(c_fields, c_values, len(metadata_dict))
 		if is_cnull(source_dict):
-			raise ValueError("errno is set to EINVAL on invalid input, our errno is {}".format(ffi.errno))
+			raise ValueError("errno is set to EINVAL on invalid input, our errno is {}".format(FFI.errno))
 
 		# If you do something stupid, like passing a string where an
 		# int (address) is meant to go, CFFI will explode. Which is
 		# fine, but that causes memory leaks. The explosion still
 		# occurs, but we cleanup after (before?) ourselves.
 		try:
-			success = c_libmarquise.marquise_update_source(self.marquise_ctx, address, source_dict)
+			success = C_LIBMARQUISE.marquise_update_source(self.marquise_ctx, address, source_dict)
 		except TypeError as e:
-			c_libmarquise.marquise_free_source(source_dict)
+			C_LIBMARQUISE.marquise_free_source(source_dict)
 			raise
 
 		self.__debug("marquise_update_source returned {}".format(success))
 		if success != 0:
-			c_libmarquise.marquise_free_source(source_dict)
-			raise RuntimeError("marquise_update_source was unsuccessful, errno is {}".format(ffi.errno))
+			C_LIBMARQUISE.marquise_free_source(source_dict)
+			raise RuntimeError("marquise_update_source was unsuccessful, errno is {}".format(FFI.errno))
 
-		c_libmarquise.marquise_free_source(source_dict)
+		C_LIBMARQUISE.marquise_free_source(source_dict)
 		return True
