@@ -1,8 +1,30 @@
+# pylint: disable=line-too-long
+# pylint: disable=bad-whitespace
+# I just like to watch the world burn:
+# pylint: disable=mixed-indentation
+
+"""This module provides the functional component of the binding shim to
+libmarquise.
+"""
+
 # Written to target Python 3.x exclusively.
 
 import time
 import errno
 from .marquise_cffi import FFI, cprint, cstring, len_cstring, is_cnull, C_LIBMARQUISE
+
+# This keeps pylint happy
+# pylint: disable=no-member
+MARQUISE_INIT = C_LIBMARQUISE.marquise_init
+MARQUISE_SHUTDOWN = C_LIBMARQUISE.marquise_shutdown
+MARQUISE_HASH_IDENTIFIER = C_LIBMARQUISE.marquise_hash_identifier
+MARQUISE_SEND_SIMPLE = C_LIBMARQUISE.marquise_send_simple
+MARQUISE_SEND_EXTENDED = C_LIBMARQUISE.marquise_send_extended
+MARQUISE_NEW_SOURCE = C_LIBMARQUISE.marquise_new_source
+MARQUISE_UPDATE_SOURCE = C_LIBMARQUISE.marquise_update_source
+MARQUISE_FREE_SOURCE = C_LIBMARQUISE.marquise_free_source
+# pylint: enable=no-member
+
 class Marquise(object):
 
 	"""
@@ -21,7 +43,7 @@ class Marquise(object):
 		"""
 		self.debug_enabled = debug
 		self.namespace_c = cstring(namespace)
-		self.marquise_ctx = C_LIBMARQUISE.marquise_init(self.namespace_c)
+		self.marquise_ctx = MARQUISE_INIT(self.namespace_c)
 		if is_cnull(self.marquise_ctx):
 			if FFI.errno == errno.EINVAL:
 				raise ValueError("Invalid namespace: {}".format(namespace))
@@ -54,7 +76,7 @@ class Marquise(object):
 		self.__debug("Shutting down Marquise handle spooling to {} and {}".format(self.spool_path_points, self.spool_path_contents))
 
 		# At the time of writing this always succeeds (returns 0).
-		C_LIBMARQUISE.marquise_shutdown(self.marquise_ctx)
+		MARQUISE_SHUTDOWN(self.marquise_ctx)
 
 		# Signal that our context is no longer valid.
 		self.marquise_ctx = None
@@ -67,7 +89,7 @@ class Marquise(object):
 		The output is an integer, which is used as the `address` of
 		datapoints belonging to the given `identifier` string.
 		"""
-		return C_LIBMARQUISE.marquise_hash_identifier(cstring(identifier), len(identifier) )
+		return MARQUISE_HASH_IDENTIFIER(cstring(identifier), len(identifier) )
 
 	@staticmethod
 	def current_timestamp():
@@ -106,7 +128,7 @@ class Marquise(object):
 		c_timestamp = FFI.cast("uint64_t", timestamp)
 		c_value =     FFI.cast("uint64_t", value)
 
-		success = C_LIBMARQUISE.marquise_send_simple(self.marquise_ctx, c_address, c_timestamp, c_value)
+		success = MARQUISE_SEND_SIMPLE(self.marquise_ctx, c_address, c_timestamp, c_value)
 		self.__debug("send_simple returned {}".format(success))
 		if success != 0:
 			raise RuntimeError("send_simple was unsuccessful, errno is {}".format(FFI.errno))
@@ -139,7 +161,7 @@ class Marquise(object):
 		c_length =    FFI.cast("size_t", len_cstring(value))
 		self.__debug("Sending extended value '{}' with length of {}".format(value, c_length))
 
-		success = C_LIBMARQUISE.marquise_send_extended(self.marquise_ctx, c_address, c_timestamp, c_value, c_length);
+		success = MARQUISE_SEND_EXTENDED(self.marquise_ctx, c_address, c_timestamp, c_value, c_length)
 		self.__debug("send_extended returned {}".format(success))
 		if success != 0:
 			raise RuntimeError("send_extended was unsuccessful, errno is {}".format(FFI.errno))
@@ -175,14 +197,16 @@ class Marquise(object):
 		# numbers are also zero-length but get memory malloc'd
 		# corresponding to their magnitude. Should probably pass
 		# everything through str() first to sanitise.
-		try:                   c_fields = [ cstring(x) for x in metadata_dict.keys() ]
-		except Exception as e: raise TypeError("One of your metadata_dict keys couldn't be cast to a Cstring, {}".format(e))
+		# pylint: disable=multiple-statements
+		try:                     c_fields = [ cstring(x) for x in metadata_dict.keys() ]
+		except Exception as exc: raise TypeError("One of your metadata_dict keys couldn't be cast to a Cstring, {}".format(exc))
 
-		try:                   c_values = [ cstring(x) for x in metadata_dict.values() ]
-		except Exception as e: raise TypeError("One of your metadata_dict values couldn't be cast to a Cstring, {}".format(e))
+		try:                     c_values = [ cstring(x) for x in metadata_dict.values() ]
+		except Exception as exc: raise TypeError("One of your metadata_dict values couldn't be cast to a Cstring, {}".format(exc))
+		# pylint: enable=multiple-statements
 
 		# Get our source_dict data structure
-		source_dict = C_LIBMARQUISE.marquise_new_source(c_fields, c_values, len(metadata_dict))
+		source_dict = MARQUISE_NEW_SOURCE(c_fields, c_values, len(metadata_dict))
 		if is_cnull(source_dict):
 			raise ValueError("errno is set to EINVAL on invalid input, our errno is {}".format(FFI.errno))
 
@@ -191,15 +215,15 @@ class Marquise(object):
 		# fine, but that causes memory leaks. The explosion still
 		# occurs, but we cleanup after (before?) ourselves.
 		try:
-			success = C_LIBMARQUISE.marquise_update_source(self.marquise_ctx, address, source_dict)
-		except TypeError as e:
-			C_LIBMARQUISE.marquise_free_source(source_dict)
+			success = MARQUISE_UPDATE_SOURCE(self.marquise_ctx, address, source_dict)
+		except TypeError as exc:
+			MARQUISE_FREE_SOURCE(source_dict)
 			raise
 
 		self.__debug("marquise_update_source returned {}".format(success))
 		if success != 0:
-			C_LIBMARQUISE.marquise_free_source(source_dict)
+			MARQUISE_FREE_SOURCE(source_dict)
 			raise RuntimeError("marquise_update_source was unsuccessful, errno is {}".format(FFI.errno))
 
-		C_LIBMARQUISE.marquise_free_source(source_dict)
+		MARQUISE_FREE_SOURCE(source_dict)
 		return True
