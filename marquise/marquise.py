@@ -106,10 +106,12 @@ class Marquise(object):
 		c_timestamp = ffi.cast("uint64_t", timestamp)
 		c_value =     ffi.cast("uint64_t", value)
 
-		retval = c_libmarquise.marquise_send_simple(self.marquise_ctx, c_address, c_timestamp, c_value)
-		self.__debug("send_simple retval is {}".format(retval))
+		success = c_libmarquise.marquise_send_simple(self.marquise_ctx, c_address, c_timestamp, c_value)
+		self.__debug("send_simple returned {}".format(success))
+		if success != 0:
+			raise RuntimeError("send_simple was unsuccessful, errno is {}".format(ffi.errno))
 
-		return True if retval == 0 else False
+		return True
 
 
 	def send_extended(self, address, timestamp, value):
@@ -137,10 +139,12 @@ class Marquise(object):
 		c_length =    ffi.cast("size_t", len_cstring(value))
 		self.__debug("Sending extended value '{}' with length of {}".format(value, c_length))
 
-		retval = c_libmarquise.marquise_send_extended(self.marquise_ctx, c_address, c_timestamp, c_value, c_length);
-		self.__debug("send_extended retval is {}".format(retval))
+		success = c_libmarquise.marquise_send_extended(self.marquise_ctx, c_address, c_timestamp, c_value, c_length);
+		self.__debug("send_extended returned {}".format(success))
+		if success != 0:
+			raise RuntimeError("send_extended was unsuccessful, errno is {}".format(ffi.errno))
 
-		return True if retval == 0 else False
+		return True
 
 
 	def update_source(self, address, metadata_dict):
