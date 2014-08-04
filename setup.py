@@ -4,7 +4,7 @@ import marquise.marquise
 extension = marquise.marquise.FFI.verifier.get_extension()
 
 with open('VERSION', 'r') as f:
-	VERSION = f.readline().strip()
+    VERSION = f.readline().strip()
 
 
 # These notes suggest that there's not yet any "correct" way to do packageable
