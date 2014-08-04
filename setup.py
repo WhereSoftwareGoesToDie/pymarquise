@@ -1,7 +1,7 @@
 from setuptools import setup
 
 import marquise.marquise
-extension = marquise.marquise.ffi.verifier.get_extension()
+extension = marquise.marquise.FFI.verifier.get_extension()
 
 with open('VERSION', 'r') as f:
 	VERSION = f.readline().strip()
