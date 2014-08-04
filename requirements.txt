@@ -1,4 +1,5 @@
 cffi
 pytest
 pytest-cov
-six==1.7.3
+six
+oslo.i18n
