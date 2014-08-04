@@ -37,7 +37,7 @@ UNSTRINGABLE = Unstringifiable()
 
 TEST_GOOD_SOURCE_DICT          = { 'foofoofoo':"barbarbar",  'lolololol':"catte",    'something else altogether':"that is rather long indeed", 'test':"source_dict" }
 TEST_BAD_SOURCE_DICT_NONE_KEY  = { None:"barbarbar",         'trolololol':"catte",   'something else altogether':"that is rather long indeed", 'test':"source_dict" }
-TEST_BAD_SOURCE_DICT_NONE_VAL  = { "foofoofoo":"barbarbar",  'trolololol':None,      'something else altogether':"that is rather long indeed", 'test':"source_dict" }
+TEST_GOOD_SOURCE_DICT_NONE_VAL = { "foofoofoo":"barbarbar",  'trolololol':None,      'something else altogether':"that is rather long indeed", 'test':"source_dict" }
 TEST_BAD_SOURCE_DICT_COLON_KEY = { 'foo:::foo':"barbarbar",  'trolololol':"catte",   'something else altogether':"that is rather long indeed", 'test':"source_dict" }
 TEST_BAD_SOURCE_DICT_COLON_VAL = { 'foofoofoo':"bar:::bar",  'trolololol':"catte",   'something else altogether':"that is rather long indeed", 'test':"source_dict" }
 TEST_BAD_SOURCE_DICT_UNSTR_KEY = { UNSTRINGABLE:"barbarbar", 'trolololol':"catte",   'something else altogether':"that is rather long indeed", 'test':"source_dict" }
@@ -169,8 +169,7 @@ def test_update_source():
     # Keys and values set to None
     with RAISES(TypeError):
         marq.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_NONE_KEY)
-    with RAISES(TypeError):
-        marq.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_NONE_VAL)
+    assert marq.update_source(TEST_GOOD_ADDRESS, TEST_GOOD_SOURCE_DICT_NONE_VAL)
     # Keys and values containing colons, which are invalid
     with RAISES(ValueError):
         marq.update_source(TEST_GOOD_ADDRESS, TEST_BAD_SOURCE_DICT_COLON_KEY)
