@@ -8,7 +8,7 @@ and the interface stays as a pure Python library, importing the shim.
 
 import os.path
 
-from oslo.common import safe_encode, safe_decode
+from openstack.common.strutils import safe_encode, safe_decode
 import six
 
 from cffi import FFI as FFI_CONSTRUCTOR
