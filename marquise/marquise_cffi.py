@@ -1,7 +1,5 @@
 # pylint: disable=line-too-long
 # pylint: disable=bad-whitespace
-# I just like to watch the world burn:
-# pylint: disable=mixed-indentation
 
 """This module holds all the CFFI stuff, so that the binding shim can be
 handled separately from the interface code. The shim compiles to a .so library,

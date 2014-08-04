@@ -1,7 +1,5 @@
 # pylint: disable=line-too-long
 # pylint: disable=bad-whitespace
-# I just like to watch the world burn:
-# pylint: disable=mixed-indentation
 
 """This module provides the functional component of the binding shim to
 libmarquise.
