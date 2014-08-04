@@ -24,5 +24,6 @@ setup(
     packages=[
         "marquise",
     ],
+    package_data={"marquise" : ["marquise.h"]},
     ext_modules = [extension],
 )

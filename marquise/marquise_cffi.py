@@ -6,6 +6,8 @@ handled separately from the interface code. The shim compiles to a .so library,
 and the interface stays as a pure Python library, importing the shim.
 """
 
+import os.path
+
 from cffi import FFI as FFI_CONSTRUCTOR
 FFI = FFI_CONSTRUCTOR()
 
@@ -29,8 +31,11 @@ def is_cnull(maybe_null):
 # This kinda beats dragging the header file in here manually, assuming you can
 # clean it up suitably.  Assume that you've symlinked to marquise.h from here.
 def get_libmarquise_header():
-    """Read the canonical marquise headers to extract definitions."""
-    with open('marquise.h') as header:
+    """Read the libmarquise header to extract definitions."""
+    # Header file is packaged in the same place as the rest of the
+    # module.
+    header_path = os.path.join(os.path.dirname(__file__), "marquise.h")
+    with open(header_path) as header:
         libmarquise_header_lines = header.readlines()
 
     libmarquise_header_lines = [ line for line in libmarquise_header_lines if not line.startswith('#include ') and not line.startswith('#define ') ]
