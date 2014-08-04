@@ -29,7 +29,7 @@ TEST_SOURCE1         = "hostname:misaka.anchor.net.au,metric:BytesTx,service:net
 class Unstringifiable(object):
 
     """This class produces instances that are deliberately unstringifiable,
-    which can trigger properly trigger our testcases for 100% coverage.
+    which can properly trigger our testcases to attain 100% coverage.
     """
 
     __str__ = None
