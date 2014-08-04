@@ -12,32 +12,32 @@ from cffi import FFI as FFI_CONSTRUCTOR
 FFI = FFI_CONSTRUCTOR()
 
 def cprint(ffi_string):
-	"""Return a UTF-8 Python string for an FFI bytestring."""
-	return str(FFI.string(ffi_string), 'utf8')
+    """Return a UTF-8 Python string for an FFI bytestring."""
+    return str(FFI.string(ffi_string), 'utf8')
 
 def cstring(new_string):
-	"""Return a new FFI string for a provided UTF-8 Python string."""
-	return FFI.new('char[]', bytes(new_string, 'utf8') )
+    """Return a new FFI string for a provided UTF-8 Python string."""
+    return FFI.new('char[]', bytes(new_string, 'utf8') )
 
 def len_cstring(new_string):
-	"""Return the length in bytes for a UTF-8 Python string."""
-	return len(bytes(new_string, 'utf8'))
+    """Return the length in bytes for a UTF-8 Python string."""
+    return len(bytes(new_string, 'utf8'))
 
 def is_cnull(maybe_null):
-	"""Return True if `maybe_null` is a null pointer, otherwise return False."""
-	return maybe_null == FFI.NULL
+    """Return True if `maybe_null` is a null pointer, otherwise return False."""
+    return maybe_null == FFI.NULL
 
 
 # This kinda beats dragging the header file in here manually, assuming you can
 # clean it up suitably.  Assume that you've symlinked to marquise.h from here.
 def get_libmarquise_header():
-	"""Read the canonical marquise headers to extract definitions."""
-	with open('marquise.h') as header:
-		libmarquise_header_lines = header.readlines()
+    """Read the canonical marquise headers to extract definitions."""
+    with open('marquise.h') as header:
+        libmarquise_header_lines = header.readlines()
 
-	libmarquise_header_lines = [ line for line in libmarquise_header_lines if not line.startswith('#include ') and not line.startswith('#define ') ]
-	libmarquise_header_lines = [ line for line in libmarquise_header_lines if not line.startswith('#include ') ]
-	return ''.join(libmarquise_header_lines)
+    libmarquise_header_lines = [ line for line in libmarquise_header_lines if not line.startswith('#include ') and not line.startswith('#define ') ]
+    libmarquise_header_lines = [ line for line in libmarquise_header_lines if not line.startswith('#include ') ]
+    return ''.join(libmarquise_header_lines)
 
 
 # Get all our cdefs from the headers.
