@@ -1,7 +1,7 @@
 pymarquise
 ==========
 
-Python bindings for libmarquise. 
+Python bindings for [libmarquise](https://github.com/anchor/libmarquise).
 
 
 Requirements
