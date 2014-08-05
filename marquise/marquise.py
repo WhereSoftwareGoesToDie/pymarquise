@@ -196,8 +196,9 @@ class Marquise(object):
         # taking a dict as input.
         if any([ x is None for x in metadata_dict.keys() ]):
             raise TypeError("One of your metadata_dict keys is a Nonetype")
-        if any([ x is None for x in metadata_dict.values() ]):
-            raise TypeError("One of your metadata_dict values is a Nonetype")
+
+        # Values are allowed to be None, coerce to empty strings.
+        metadata_dict = dict([ (x[0],"" if x[1] is None else x[1]) for x in metadata_dict.items() ])
 
         # Cast each string to a C-string. This may have unusual results if your
         # keys/vals aren't particularly stringy, such as Python classes,
