@@ -44,20 +44,20 @@ class Marquise(object):
         self.marquise_ctx = MARQUISE_INIT(self.namespace_c)
         if is_cnull(self.marquise_ctx):
             if FFI.errno == errno.EINVAL:
-                raise ValueError("Invalid namespace: {}".format(namespace))
-            raise RuntimeError("Something went wrong, got NULL instead of a marquise_ctx. build_spool_path() failed, or malloc failed. errno is {}".format(FFI.errno))
+                raise ValueError("Invalid namespace: %s" % namespace)
+            raise RuntimeError("Something went wrong, got NULL instead of a marquise_ctx. build_spool_path() failed, or malloc failed. errno is %d" % FFI.errno)
 
         self.spool_path_points   = cprint(self.marquise_ctx.spool_path_points)
         self.spool_path_contents = cprint(self.marquise_ctx.spool_path_contents)
 
     def __str__(self):
         """Return a human-readable description of the current Marquise context."""
-        return "<Marquise handle spooling to {} and {}>".format(self.spool_path_points, self.spool_path_contents)
+        return "<Marquise handle spooling to %s and %s>" % (self.spool_path_points, self.spool_path_contents)
 
     def __debug(self, msg):
         """Print `msg` if debugging is enabled on this instance. Intended for internal use."""
         if self.debug_enabled:
-            print("DEBUG: {}".format(msg))
+            print("DEBUG: %s" % msg)
 
     def close(self):
         """Close the Marquise context, ensuring data is flushed and
@@ -71,7 +71,7 @@ class Marquise(object):
             # Multiple close() calls are okay.
             return
 
-        self.__debug("Shutting down Marquise handle spooling to {} and {}".format(self.spool_path_points, self.spool_path_contents))
+        self.__debug("Shutting down Marquise handle spooling to %s and %s" % (self.spool_path_points, self.spool_path_contents))
 
         # At the time of writing this always succeeds (returns 0).
         MARQUISE_SHUTDOWN(self.marquise_ctx)
@@ -115,7 +115,7 @@ class Marquise(object):
         if self.marquise_ctx is None:
             raise ValueError("Attempted to write to a closed Marquise handle.")
 
-        self.__debug("Supplied address: {}".format(address))
+        self.__debug("Supplied address: %" % address)
 
         if value is None:
             raise TypeError("Can't store None as a value.")
@@ -131,9 +131,9 @@ class Marquise(object):
 
         success = MARQUISE_SEND_SIMPLE(self.marquise_ctx, c_address, c_timestamp, c_value)
         if success != 0:
-            self.__debug("send_simple returned {}, raising exception".format(success))
-            raise RuntimeError("send_simple was unsuccessful, errno is {}".format(FFI.errno))
-        self.__debug("send_simple returned {}".format(success))
+            self.__debug("send_simple returned %d, raising exception" % success)
+            raise RuntimeError("send_simple was unsuccessful, errno is %d" % FFI.errno)
+        self.__debug("send_simple returned %d" % success)
 
         return True
 
@@ -149,7 +149,7 @@ class Marquise(object):
         if self.marquise_ctx is None:
             raise ValueError("Attempted to write to a closed Marquise handle.")
 
-        self.__debug("Supplied address: {}".format(address))
+        self.__debug("Supplied address: %d" % address)
 
         if value is None:
             raise TypeError("Can't store None as a value.")
@@ -166,13 +166,13 @@ class Marquise(object):
         # c_value needs to be a byte array with a length in bytes
         c_value =     cstring(value)
         c_length =    FFI.cast("size_t", len_cstring(value))
-        self.__debug("Sending extended value '{}' with length of {}".format(value, c_length))
+        self.__debug("Sending extended value '%s' with length of %d" % (value, c_length))
 
         success = MARQUISE_SEND_EXTENDED(self.marquise_ctx, c_address, c_timestamp, c_value, c_length)
         if success != 0:
-            self.__debug("send_extended returned {}, raising exception".format(success))
-            raise RuntimeError("send_extended was unsuccessful, errno is {}".format(FFI.errno))
-        self.__debug("send_extended returned {}".format(success))
+            self.__debug("send_extended returned %d, raising exception" % success)
+            raise RuntimeError("send_extended was unsuccessful, errno is %d" % FFI.errno)
+        self.__debug("send_extended returned %d" % success)
 
         return True
 
@@ -187,7 +187,7 @@ class Marquise(object):
         if self.marquise_ctx is None:
             raise ValueError("Attempted to write to a closed Marquise handle.")
 
-        self.__debug("Supplied address: {}".format(address))
+        self.__debug("Supplied address: %d" % address)
 
         # Sanity check the input, everything must be UTF8 strings (not
         # yet confirmed), no Nonetypes or anything stupid like that.
@@ -204,16 +204,16 @@ class Marquise(object):
         # Exceptions, etc. They will get str()'d, and they may look stupid.
         # pylint: disable=multiple-statements
         try:                     c_fields = [ cstring(str(x)) for x in metadata_dict.keys() ]
-        except Exception as exc: raise TypeError("One of your metadata_dict keys couldn't be cast to a Cstring, {}".format(exc))
+        except Exception as exc: raise TypeError("One of your metadata_dict keys couldn't be cast to a Cstring, %s" % exc)
 
         try:                     c_values = [ cstring(str(x)) for x in metadata_dict.values() ]
-        except Exception as exc: raise TypeError("One of your metadata_dict values couldn't be cast to a Cstring, {}".format(exc))
+        except Exception as exc: raise TypeError("One of your metadata_dict values couldn't be cast to a Cstring, %s" % exc)
         # pylint: enable=multiple-statements
 
         # Get our source_dict data structure
         source_dict = MARQUISE_NEW_SOURCE(c_fields, c_values, len(metadata_dict))
         if is_cnull(source_dict):
-            raise ValueError("errno is set to EINVAL on invalid input, our errno is {}".format(FFI.errno))
+            raise ValueError("errno is set to EINVAL on invalid input, our errno is %d" % FFI.errno)
 
         # If you do something stupid, like passing a string where an
         # int (address) is meant to go, CFFI will explode. Which is
@@ -225,10 +225,10 @@ class Marquise(object):
             MARQUISE_FREE_SOURCE(source_dict)
             raise
 
-        self.__debug("marquise_update_source returned {}".format(success))
+        self.__debug("marquise_update_source returned %d" % success)
         if success != 0:
             MARQUISE_FREE_SOURCE(source_dict)
-            raise RuntimeError("marquise_update_source was unsuccessful, errno is {}".format(FFI.errno))
+            raise RuntimeError("marquise_update_source was unsuccessful, errno is %d" % FFI.errno)
 
         MARQUISE_FREE_SOURCE(source_dict)
         return True
