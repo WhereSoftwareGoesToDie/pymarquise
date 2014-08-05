@@ -115,7 +115,7 @@ class Marquise(object):
         if self.marquise_ctx is None:
             raise ValueError("Attempted to write to a closed Marquise handle.")
 
-        self.__debug("Supplied address: %d" % address)
+        self.__debug("Supplied address: %s" % address)
 
         if value is None:
             raise TypeError("Can't store None as a value.")
@@ -149,7 +149,7 @@ class Marquise(object):
         if self.marquise_ctx is None:
             raise ValueError("Attempted to write to a closed Marquise handle.")
 
-        self.__debug("Supplied address: %d" % address)
+        self.__debug("Supplied address: %s" % address)
 
         if value is None:
             raise TypeError("Can't store None as a value.")
@@ -187,7 +187,7 @@ class Marquise(object):
         if self.marquise_ctx is None:
             raise ValueError("Attempted to write to a closed Marquise handle.")
 
-        self.__debug("Supplied address: %d" % address)
+        self.__debug("Supplied address: %s" % address)
 
         # Sanity check the input, everything must be UTF8 strings (not
         # yet confirmed), no Nonetypes or anything stupid like that.
