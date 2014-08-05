@@ -8,20 +8,23 @@ and the interface stays as a pure Python library, importing the shim.
 
 import os.path
 
+from .oslo_strutils import safe_encode, safe_decode
+import six
+
 from cffi import FFI as FFI_CONSTRUCTOR
 FFI = FFI_CONSTRUCTOR()
 
 def cprint(ffi_string):
     """Return a UTF-8 Python string for an FFI bytestring."""
-    return str(FFI.string(ffi_string), 'utf8')
+    return safe_decode(FFI.string(ffi_string), 'utf8')
 
 def cstring(new_string):
     """Return a new FFI string for a provided UTF-8 Python string."""
-    return FFI.new('char[]', bytes(new_string, 'utf8') )
+    return FFI.new('char[]', safe_encode(new_string, 'utf8') )
 
 def len_cstring(new_string):
     """Return the length in bytes for a UTF-8 Python string."""
-    return len(bytes(new_string, 'utf8'))
+    return len(safe_encode(new_string, 'utf8'))
 
 def is_cnull(maybe_null):
     """Return True if `maybe_null` is a null pointer, otherwise return False."""

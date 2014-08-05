@@ -1,7 +1,11 @@
 language: python
 
 python:
+  - 3.4
   - 3.3
+  - 3.2
+  - 2.7
+  - 2.6
 
 before_install:
   - git clone https://github.com/anchor/libmarquise.git ../libmarquise/
