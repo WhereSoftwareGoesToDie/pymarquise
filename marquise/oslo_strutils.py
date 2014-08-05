@@ -13,6 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+# This file was originally part of the Oslo incubator
+# (https://github.com/openstack/oslo-incubator), in
+# openstack/common/strutils.py.
+
 """
 System-level utilities and helper functions.
 """
