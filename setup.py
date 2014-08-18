@@ -19,6 +19,8 @@ setup(
     description="Python bindings for libmarquise",
     author="Barney Desmond",
     author_email="engineering@anchor.net.au",
+    maintainer="Anchor Engineering",
+    maintainer_email="engineering@anchor.net.au",
     url="https://github.com/anchor/pymarquise",
     zip_safe=False,
     packages=[
@@ -26,4 +28,5 @@ setup(
     ],
     package_data={"marquise" : ["marquise.h"]},
     ext_modules = [extension],
+    include_package_data=True
 )
