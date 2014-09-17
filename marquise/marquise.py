@@ -5,8 +5,6 @@
 libmarquise.
 """
 
-# Written to target Python 3.x exclusively.
-
 import time
 import errno
 from .marquise_cffi import FFI, cprint, cstring, len_cstring, is_cnull, C_LIBMARQUISE
