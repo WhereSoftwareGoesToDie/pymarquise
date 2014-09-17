@@ -43,6 +43,9 @@ def get_libmarquise_header():
 
     libmarquise_header_lines = [ line for line in libmarquise_header_lines if not line.startswith('#include ') and not line.startswith('#define ') ]
     libmarquise_header_lines = [ line for line in libmarquise_header_lines if not line.startswith('#include ') ]
+    # We can't #include glib so FFI doesn't know what a GTree is. Leave it for
+    # later and let the C compiler resolve it when we call FFI.verify()
+    libmarquise_header_lines = [ line.replace("GTree *sd_hashes;", "...;") for line in libmarquise_header_lines ]
     return ''.join(libmarquise_header_lines)
 
 
@@ -52,4 +55,5 @@ FFI.cdef(get_libmarquise_header())
 
 # Throw libmarquise at CFFI, let it do the hard work. This gives us
 # API-level access instead of ABI access, and is generally preferred.
-C_LIBMARQUISE = FFI.verify("""#include "marquise.h" """, include_dirs=['./'], libraries=['marquise'], modulename='marquise_cffi' )
+# XXX: Not sure if these #includes and libraries are correct yet; WIP.
+C_LIBMARQUISE = FFI.verify("""#include <glib.h>\n#include <glib-2.0/glib.h>\n#include "marquise.h" """, include_dirs=['./'], libraries=['marquise', 'glib', 'glib-2.0'], modulename='marquise_cffi' )
