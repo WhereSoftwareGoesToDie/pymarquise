@@ -23,6 +23,10 @@ MARQUISE_UPDATE_SOURCE = C_LIBMARQUISE.marquise_update_source
 MARQUISE_FREE_SOURCE = C_LIBMARQUISE.marquise_free_source
 # pylint: enable=no-member
 
+# constants
+SPOOL_POINTS = 0
+SPOOL_CONTENTS = 1
+
 class Marquise(object):
 
     """
@@ -47,8 +51,8 @@ class Marquise(object):
                 raise ValueError("Invalid namespace: %s" % namespace)
             raise RuntimeError("Something went wrong, got NULL instead of a marquise_ctx. build_spool_path() failed, or malloc failed. errno is %d" % FFI.errno)
 
-        self.spool_path_points   = cprint(self.marquise_ctx.spool_path_points)
-        self.spool_path_contents = cprint(self.marquise_ctx.spool_path_contents)
+        self.spool_path_points   = cprint(self.marquise_ctx.spool_path[SPOOL_POINTS])
+        self.spool_path_contents = cprint(self.marquise_ctx.spool_path[SPOOL_CONTENTS])
 
     def __str__(self):
         """Return a human-readable description of the current Marquise context."""
