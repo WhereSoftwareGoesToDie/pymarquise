@@ -21,10 +21,6 @@ MARQUISE_UPDATE_SOURCE = C_LIBMARQUISE.marquise_update_source
 MARQUISE_FREE_SOURCE = C_LIBMARQUISE.marquise_free_source
 # pylint: enable=no-member
 
-# constants
-SPOOL_POINTS = 0
-SPOOL_CONTENTS = 1
-
 class Marquise(object):
 
     """
