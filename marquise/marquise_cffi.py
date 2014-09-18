@@ -9,7 +9,6 @@ and the interface stays as a pure Python library, importing the shim.
 import os.path
 
 from .oslo_strutils import safe_encode, safe_decode
-import six
 
 from cffi import FFI as FFI_CONSTRUCTOR
 FFI = FFI_CONSTRUCTOR()
