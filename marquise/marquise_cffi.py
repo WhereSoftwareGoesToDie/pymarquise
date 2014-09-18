@@ -55,5 +55,7 @@ FFI.cdef(get_libmarquise_header())
 
 # Throw libmarquise at CFFI, let it do the hard work. This gives us
 # API-level access instead of ABI access, and is generally preferred.
-# XXX: Not sure if these #includes and libraries are correct yet; WIP.
-C_LIBMARQUISE = FFI.verify("""#include <glib.h>\n#include <glib-2.0/glib.h>\n#include "marquise.h" """, include_dirs=['./'], libraries=['marquise', 'glib', 'glib-2.0'], modulename='marquise_cffi' )
+C_LIBMARQUISE = FFI.verify("""#include "marquise.h" """,
+                           include_dirs=['./', '/usr/include/glib-2.0', '/usr/lib64/glib-2.0/include'],
+                           libraries=['marquise'],
+                           modulename='marquise_cffi')
