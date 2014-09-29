@@ -37,6 +37,7 @@ clean:
 	-rm -rf dist
 	-rm -rf marquise.egg-info
 	-rm _cffi__*.so
+	-rm *.cpython-33m.so
 	-rm *.cpython-34m.so
 	find . -name '*.pyc' -delete
 	@echo
