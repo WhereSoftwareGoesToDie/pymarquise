@@ -11,7 +11,7 @@ extension = marquise.marquise.FFI.verifier.get_extension()
 
 setup(
     name="marquise",
-    version="0.2.1",
+    version="0.2.2",
     description="Python bindings for libmarquise",
     author="Barney Desmond",
     author_email="engineering@anchor.net.au",

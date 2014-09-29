@@ -5,8 +5,6 @@
 libmarquise.
 """
 
-# Written to target Python 3.x exclusively.
-
 import time
 import errno
 from .marquise_cffi import FFI, cprint, cstring, len_cstring, is_cnull, C_LIBMARQUISE
@@ -49,6 +47,10 @@ class Marquise(object):
 
         self.spool_path_points   = cprint(self.marquise_ctx.spool_path_points)
         self.spool_path_contents = cprint(self.marquise_ctx.spool_path_contents)
+        # There may be useful in future, but not right now. I can't decide
+        # what a nice access method would be, maybe as attrs on Marquise?
+        #self.bytes_written_points   = self.marquise_ctx.bytes_written_points
+        #self.bytes_written_contents = self.marquise_ctx.bytes_written_contents
 
     def __str__(self):
         """Return a human-readable description of the current Marquise context."""
